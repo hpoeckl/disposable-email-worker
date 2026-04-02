@@ -394,9 +394,9 @@ CREATE INDEX idx_failed_user ON failed_deliveries(user, created_at);
 
 ## Infrastructure as Code (Pulumi)
 
-All Cloudflare infrastructure is managed via Pulumi with TypeScript — same
-language as the Worker, single toolchain. State stored in Pulumi Cloud (free
-tier) or a self-managed backend.
+All Cloudflare infrastructure is managed via Pulumi with YAML — declarative,
+no build step, no additional dependencies beyond the Pulumi CLI. State stored
+in Pulumi Cloud (free tier) or a self-managed backend.
 
 ### Managed Resources
 
@@ -465,12 +465,8 @@ Tags follow `v0.1.0` format. Changelog maintained in `CHANGELOG.md`
 ├── tsconfig.json              # Shared TypeScript config
 ├── wrangler.toml              # Cloudflare Worker config (no secrets)
 ├── .gitignore
-├── infra/                     # Pulumi IaC (TypeScript)
-│   ├── Pulumi.yaml            # Pulumi project definition
-│   ├── Pulumi.dev.yaml        # Dev stack config (no secrets in repo)
-│   ├── package.json           # Pulumi dependencies
-│   ├── tsconfig.json          # Pulumi TypeScript config
-│   └── index.ts               # Infrastructure: DNS, Access, Email Routing, D1
+├── infra/                     # Pulumi IaC (YAML)
+│   └── Pulumi.yaml            # Project definition + all resources
 ├── migrations/
 │   └── 0001_initial.sql       # D1 schema (full)
 ├── src/

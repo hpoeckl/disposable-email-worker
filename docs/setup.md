@@ -27,7 +27,6 @@ Scope: the specific zone you're deploying to.
 git clone https://github.com/<your-org>/disposable-email-worker.git
 cd disposable-email-worker
 npm install
-cd infra && npm install && cd ..
 ```
 
 ## Step 3: Enable Email Routing

@@ -1,6 +1,150 @@
 name: disposable-email-infra
-runtime:
-  name: nodejs
-  options:
-    typescript: true
+runtime: yaml
 description: Cloudflare infrastructure for the disposable email gateway
+
+config:
+  zoneId:
+    type: string
+    description: Cloudflare zone ID
+  accountId:
+    type: string
+    description: Cloudflare account ID
+  baseDomain:
+    type: string
+    description: Base domain for email routing (e.g. drop.example.com)
+  parentDomain:
+    type: string
+    description: Parent domain (e.g. example.com)
+  workerName:
+    type: string
+    default: disposable-email-worker
+    description: Worker script name
+  accessAllowedEmails:
+    type: string
+    description: Comma-separated email addresses allowed via Access OTP
+
+# ---------------------------------------------------------------------------
+# DNS Records
+# ---------------------------------------------------------------------------
+resources:
+
+  # MX records — route mail to Cloudflare Email Routing
+  mx-route1:
+    type: cloudflare:DnsRecord
+    properties:
+      zoneId: ${zoneId}
+      name: ${baseDomain}
+      type: MX
+      content: route1.mx.cloudflare.net
+      priority: 69
+      ttl: 1
+
+  mx-route2:
+    type: cloudflare:DnsRecord
+    properties:
+      zoneId: ${zoneId}
+      name: ${baseDomain}
+      type: MX
+      content: route2.mx.cloudflare.net
+      priority: 34
+      ttl: 1
+
+  mx-route3:
+    type: cloudflare:DnsRecord
+    properties:
+      zoneId: ${zoneId}
+      name: ${baseDomain}
+      type: MX
+      content: route3.mx.cloudflare.net
+      priority: 98
+      ttl: 1
+
+  # SPF — authorize Cloudflare to send on behalf of the base domain
+  spf:
+    type: cloudflare:DnsRecord
+    properties:
+      zoneId: ${zoneId}
+      name: ${baseDomain}
+      type: TXT
+      content: "v=spf1 include:_spf.mx.cloudflare.net ~all"
+      ttl: 1
+
+  # CNAME wildcard — route all per-user subdomains to the base domain.
+  # Must be unproxied (DNS-only) for MX resolution.
+  # If Cloudflare Email Routing doesn't follow the CNAME, per-user MX
+  # records will be provisioned at runtime via the Cloudflare API.
+  wildcard-cname:
+    type: cloudflare:DnsRecord
+    properties:
+      zoneId: ${zoneId}
+      name: "*.${baseDomain}"
+      type: CNAME
+      content: ${baseDomain}
+      proxied: false
+      ttl: 1
+
+  # ---------------------------------------------------------------------------
+  # D1 Database
+  # ---------------------------------------------------------------------------
+  disposable-email-db:
+    type: cloudflare:D1Database
+    properties:
+      accountId: ${accountId}
+      name: disposable-email-db
+
+  # ---------------------------------------------------------------------------
+  # Cloudflare Access — Application + OTP Policy
+  # ---------------------------------------------------------------------------
+
+  # Access application protecting the management dashboard
+  dashboard:
+    type: cloudflare:ZeroTrustAccessApplication
+    properties:
+      zoneId: ${zoneId}
+      name: Disposable Email Dashboard
+      domain: ${baseDomain}
+      type: self_hosted
+      sessionDuration: "24h"
+
+  # Access policy: allow specific email addresses via OTP
+  email-otp:
+    type: cloudflare:ZeroTrustAccessPolicy
+    properties:
+      applicationId: ${dashboard.id}
+      zoneId: ${zoneId}
+      name: Email OTP
+      decision: allow
+      precedence: 1
+      includes:
+        - emails:
+            fn::split:
+              - ","
+              - ${accessAllowedEmails}
+
+  # ---------------------------------------------------------------------------
+  # Email Routing — Catch-All Rule
+  # ---------------------------------------------------------------------------
+  # Note: Email Routing must be enabled on the zone first (Cloudflare
+  # dashboard). The catch-all rule assumes email routing is already active.
+
+  catch-all:
+    type: cloudflare:EmailRoutingCatchAll
+    properties:
+      zoneId: ${zoneId}
+      name: Forward to Worker
+      enabled: true
+      matchers:
+        - type: all
+      actions:
+        - type: worker
+          values:
+            - ${workerName}
+
+# ---------------------------------------------------------------------------
+# Outputs
+# ---------------------------------------------------------------------------
+outputs:
+  databaseId: ${disposable-email-db.id}
+  databaseName: ${disposable-email-db.name}
+  accessAppId: ${dashboard.id}
+  wildcardCnameHostname: ${wildcard-cname.name}

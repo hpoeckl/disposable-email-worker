@@ -11,8 +11,7 @@ dist/
 *.secret
 .dev.vars
 
-# Pulumi
-infra/node_modules/
+# Pulumi — stack config files contain secrets/env-specific values
 Pulumi.*.yaml
 !infra/Pulumi.yaml
 

@@ -28,7 +28,7 @@ Aliases auto-expire after a configurable number of messages (default: 24). After
 - Mobile-friendly web dashboard
 - Multi-user via Cloudflare Access (email OTP, no passwords)
 - Admin role for cross-user management
-- Infrastructure as Code with Pulumi (TypeScript)
+- Infrastructure as Code with Pulumi (YAML)
 
 ## Architecture
 
@@ -66,7 +66,6 @@ Browser ───────▶ Cloudflare Access ──▶ Same Worker (fetch 
 git clone https://github.com/<your-org>/disposable-email-worker.git
 cd disposable-email-worker
 npm install
-cd infra && npm install && cd ..
 ```
 
 ### 2. Configure Pulumi stack
@@ -132,7 +131,7 @@ npm run migrate:local # Apply migrations to local D1
 ## Project Structure
 
 ```
-├── infra/              Pulumi IaC (TypeScript)
+├── infra/              Pulumi IaC (YAML)
 ├── migrations/         D1 SQL migrations
 ├── src/                Worker source code
 │   ├── api/            REST API route handlers

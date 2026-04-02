@@ -1,6 +1,6 @@
 # Infrastructure (Pulumi)
 
-All Cloudflare infrastructure is managed via Pulumi with TypeScript. The stack lives in `infra/`.
+All Cloudflare infrastructure is managed via Pulumi with YAML. The entire stack is defined in `infra/Pulumi.yaml` — no build step, no dependencies beyond the Pulumi CLI.
 
 ## Managed Resources
 
@@ -23,7 +23,6 @@ All Cloudflare infrastructure is managed via Pulumi with TypeScript. The stack l
 ## Prerequisites
 
 - [Pulumi CLI](https://www.pulumi.com/docs/install/) >= 3
-- [Node.js](https://nodejs.org/) >= 18
 - Cloudflare API token with: `Zone.DNS:Edit`, `Email Routing:Edit`, `Access:Edit`, `D1:Edit`
 
 ## Stack Configuration
@@ -44,7 +43,6 @@ Required config values (set via `pulumi config set`):
 
 ```bash
 cd infra
-npm install
 
 # Initialize a new stack
 pulumi stack init dev
@@ -78,7 +76,6 @@ pulumi destroy
 | `databaseName` | D1 database name |
 | `accessAppId` | Cloudflare Access application ID |
 | `wildcardCnameHostname` | Wildcard CNAME record hostname |
-| `mxRecords` | MX record hostnames |
 
 ## State Backend
 
@@ -90,7 +87,7 @@ Pulumi state is stored externally, never in the repository. Options:
 
 ## Provider Notes
 
-The Cloudflare Pulumi provider (`@pulumi/cloudflare`) wraps the Cloudflare Terraform provider. Resource availability mirrors the Terraform provider. If a resource type isn't supported, use `pulumi.dynamic.Resource` with direct API calls or manage it manually.
+The Cloudflare Pulumi provider wraps the Cloudflare Terraform provider. Resource availability mirrors the Terraform provider. The YAML runtime doesn't support dynamic providers — if a resource isn't available, manage it manually or switch the stack to TypeScript/Go.
 
 Known considerations:
 - Email Routing zone-level enablement may need to be done in the Cloudflare dashboard before the catch-all rule can be created.

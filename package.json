@@ -11,8 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
-    "infra:preview": "cd infra && pulumi preview",
-    "infra:up": "cd infra && pulumi up"
+    "infra:preview": "pulumi -C infra preview",
+    "infra:up": "pulumi -C infra up"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250327.0",
