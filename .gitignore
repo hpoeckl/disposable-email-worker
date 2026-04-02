@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.wrangler/
+
+# Environment and secrets
+.env
+.env.*
+*.secret
+.dev.vars
+
+# Pulumi
+infra/node_modules/
+Pulumi.*.yaml
+!infra/Pulumi.yaml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test coverage
+coverage/

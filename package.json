@@ -1,0 +1,23 @@
+{
+  "name": "disposable-email-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Serverless disposable email gateway on Cloudflare Email Workers",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "migrate": "wrangler d1 migrations apply disposable-email-db",
+    "migrate:local": "wrangler d1 migrations apply disposable-email-db --local",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "infra:preview": "cd infra && pulumi preview",
+    "infra:up": "cd infra && pulumi up"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250327.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0",
+    "wrangler": "^4.10.0"
+  }
+}

@@ -1,0 +1,6 @@
+name: disposable-email-infra
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+description: Cloudflare infrastructure for the disposable email gateway

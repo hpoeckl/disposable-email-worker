@@ -1,0 +1,23 @@
+name = "disposable-email-worker"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+
+# D1 database binding — actual database_id set per environment
+[[d1_databases]]
+binding = "DB"
+database_name = "disposable-email-db"
+database_id = "" # Set via `wrangler d1 create` or Pulumi output
+
+# Email routing — Worker receives inbound email
+# Configured in Cloudflare dashboard or via Pulumi
+# [triggers]
+# The email handler is exported from src/index.ts as `email`
+
+# Environment variables (non-secret)
+# ADMIN_USERS — comma-separated admin emails, set via `wrangler secret put`
+# BASE_DOMAIN — e.g., "drop.example.com", set per environment
+
+# Secrets (set via `wrangler secret put`):
+# - ADMIN_USERS
+# - CLOUDFLARE_API_TOKEN (only if CNAME wildcard fails)
+# - CLOUDFLARE_ZONE_ID (only if CNAME wildcard fails)

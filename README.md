@@ -1,0 +1,153 @@
+# Disposable Email Gateway
+
+Serverless disposable email address service built on [Cloudflare Email Workers](https://developers.cloudflare.com/email-routing/email-workers/). Inspired by [Spamgourmet](https://www.spamgourmet.com) and [addy.io](https://addy.io), redesigned for a serverless, MTA-free architecture.
+
+## How It Works
+
+Each user gets a subdomain under your base domain:
+
+```
+<tag>@<user>.drop.example.com
+```
+
+- **tag**: any string — becomes the alias name (e.g., `amazon`, `newsletter`)
+- **user**: derived from the authenticated user's email localpart
+
+Aliases auto-expire after a configurable number of messages (default: 24). After expiry, messages are rejected but still counted. Whitelisted senders bypass the counter entirely.
+
+## Features
+
+- Disposable email aliases with automatic expiry after N messages
+- No self-hosted MTA — runs entirely on Cloudflare's free tier
+- Per-alias sender whitelisting (email, domain, pattern)
+- User-level rule engine (AND/OR conditions, block/reject/forward actions)
+- Multiple recipients per alias
+- Configurable `From` header rewriting with counter visibility
+- Bandwidth tracking with monthly limits
+- Failed delivery logging
+- Mobile-friendly web dashboard
+- Multi-user via Cloudflare Access (email OTP, no passwords)
+- Admin role for cross-user management
+- Infrastructure as Code with Pulumi (TypeScript)
+
+## Architecture
+
+```
+Inbound mail ──▶ Cloudflare Email Routing ──▶ Email Worker (email handler)
+                                                  ├─ Parse tag + user
+                                                  ├─ Evaluate rules
+                                                  ├─ Check whitelist
+                                                  ├─ Check counter / limit
+                                                  ├─ Rewrite From header
+                                                  ├─ Forward or reject
+                                                  └─ Log to D1
+
+Browser ───────▶ Cloudflare Access ──▶ Same Worker (fetch handler)
+                                          ├─ REST API
+                                          ├─ JWT auth + admin check
+                                          └─ Serves dashboard UI
+```
+
+**Stack**: Cloudflare Workers, D1 (SQLite), Email Routing, Access, Pages. Zero external dependencies.
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) >= 18
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) >= 4
+- [Pulumi CLI](https://www.pulumi.com/docs/install/) >= 3
+- A Cloudflare account with a domain configured
+- Cloudflare API token with permissions: `Zone.DNS:Edit`, `Email Routing:Edit`, `Access:Edit`, `D1:Edit`
+
+## Quick Start
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/<your-org>/disposable-email-worker.git
+cd disposable-email-worker
+npm install
+cd infra && npm install && cd ..
+```
+
+### 2. Configure Pulumi stack
+
+```bash
+cd infra
+pulumi stack init dev
+pulumi config set zoneId <your-zone-id>
+pulumi config set accountId <your-account-id>
+pulumi config set baseDomain drop.example.com
+pulumi config set parentDomain example.com
+pulumi config set accessAllowedEmails "you@example.com"
+pulumi config set cloudflare:apiToken <token> --secret
+```
+
+### 3. Provision infrastructure
+
+```bash
+pulumi up
+```
+
+This creates DNS records, Cloudflare Access policy, Email Routing catch-all, and the D1 database.
+
+### 4. Update wrangler.toml
+
+Copy the D1 database ID from Pulumi output into `wrangler.toml`:
+
+```bash
+pulumi stack output databaseId
+```
+
+### 5. Run D1 migrations
+
+```bash
+wrangler d1 migrations apply disposable-email-db
+```
+
+### 6. Set Worker secrets
+
+```bash
+wrangler secret put ADMIN_USERS   # comma-separated admin emails
+```
+
+### 7. Deploy
+
+```bash
+wrangler deploy
+```
+
+### 8. Verify
+
+Send an email to `test@<user>.drop.example.com` and confirm it forwards to your inbox.
+
+## Development
+
+```bash
+npm run dev          # Local dev server (wrangler dev)
+npm test             # Run tests
+npm run lint         # Type check
+npm run migrate:local # Apply migrations to local D1
+```
+
+## Project Structure
+
+```
+├── infra/              Pulumi IaC (TypeScript)
+├── migrations/         D1 SQL migrations
+├── src/                Worker source code
+│   ├── api/            REST API route handlers
+│   └── db/             D1 data access layer
+├── ui/                 Web dashboard (SPA)
+├── test/               Tests
+└── docs/               Technical documentation
+```
+
+See [docs/](docs/) for detailed documentation on DNS setup, infrastructure, Cloudflare Access configuration, and address format conventions.
+
+## Versioning
+
+This project follows [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for release history.
+
+## License
+
+[MIT](LICENSE)
