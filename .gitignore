@@ -10,6 +10,7 @@ dist/
 .env.*
 *.secret
 .dev.vars
+wrangler.toml
 
 # Pulumi — stack config files contain secrets/env-specific values
 Pulumi.*.yaml

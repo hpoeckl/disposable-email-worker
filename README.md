@@ -65,6 +65,7 @@ Browser ───────▶ Cloudflare Access ──▶ Same Worker (fetch 
 ```bash
 git clone https://github.com/<your-org>/disposable-email-worker.git
 cd disposable-email-worker
+cp wrangler.toml.example wrangler.toml
 npm install
 ```
 

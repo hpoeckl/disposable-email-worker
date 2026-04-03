@@ -26,6 +26,7 @@ Scope: the specific zone you're deploying to.
 ```bash
 git clone https://github.com/<your-org>/disposable-email-worker.git
 cd disposable-email-worker
+cp wrangler.toml.example wrangler.toml
 npm install
 ```
 
@@ -73,7 +74,9 @@ pulumi stack output databaseId
 
 ## Step 5: Configure wrangler.toml
 
-Update the `database_id` field in `wrangler.toml` with the D1 database ID from the previous step.
+Update `wrangler.toml` (copied from `wrangler.toml.example` in step 2) with:
+- `database_id`: the D1 database ID from the previous step
+- `BASE_DOMAIN`: your base domain (e.g., `drop.example.com`)
 
 ## Step 6: Run Migrations
 

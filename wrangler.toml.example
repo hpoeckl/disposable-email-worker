@@ -6,16 +6,14 @@ compatibility_date = "2025-04-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "disposable-email-db"
-database_id = "" # Set via `wrangler d1 create` or Pulumi output
+database_id = ""  # Set via: pulumi -C infra stack output databaseId
 
-# Email routing — Worker receives inbound email
-# Configured in Cloudflare dashboard or via Pulumi
-# [triggers]
-# The email handler is exported from src/index.ts as `email`
+# Email routing — Worker receives inbound email via exported `email` handler
+# Catch-all configured via Pulumi after first deploy
 
 # Environment variables (non-secret)
-# ADMIN_USERS — comma-separated admin emails, set via `wrangler secret put`
-# BASE_DOMAIN — e.g., "drop.example.com", set per environment
+[vars]
+BASE_DOMAIN = ""  # e.g. "drop.example.com" — set to your base domain
 
 # Secrets (set via `wrangler secret put`):
 # - ADMIN_USERS
