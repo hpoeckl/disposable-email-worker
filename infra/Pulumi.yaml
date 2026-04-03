@@ -5,23 +5,17 @@ description: Cloudflare infrastructure for the disposable email gateway
 config:
   zoneId:
     type: string
-    description: Cloudflare zone ID
   accountId:
     type: string
-    description: Cloudflare account ID
   baseDomain:
     type: string
-    description: Base domain for email routing (e.g. drop.example.com)
   parentDomain:
     type: string
-    description: Parent domain (e.g. example.com)
   workerName:
     type: string
     default: disposable-email-worker
-    description: Worker script name
-  accessAllowedEmails:
+  accessAllowedEmail:
     type: string
-    description: Comma-separated email addresses allowed via Access OTP
 
 # ---------------------------------------------------------------------------
 # DNS Records
@@ -66,7 +60,7 @@ resources:
       zoneId: ${zoneId}
       name: ${baseDomain}
       type: TXT
-      content: "v=spf1 include:_spf.mx.cloudflare.net ~all"
+      content: "v=spf1 include:_spf.mx.cloudflare.net -all"
       ttl: 1
 
   # CNAME wildcard — route all per-user subdomains to the base domain.
@@ -96,7 +90,9 @@ resources:
   # Cloudflare Access — Application + OTP Policy
   # ---------------------------------------------------------------------------
 
-  # Access application protecting the management dashboard
+  # Access application with inline email OTP policy.
+  # For multiple users, add additional include entries or use an
+  # emailDomain rule.
   dashboard:
     type: cloudflare:ZeroTrustAccessApplication
     properties:
@@ -105,40 +101,32 @@ resources:
       domain: ${baseDomain}
       type: self_hosted
       sessionDuration: "24h"
-
-  # Access policy: allow specific email addresses via OTP
-  email-otp:
-    type: cloudflare:ZeroTrustAccessPolicy
-    properties:
-      applicationId: ${dashboard.id}
-      zoneId: ${zoneId}
-      name: Email OTP
-      decision: allow
-      precedence: 1
-      includes:
-        - emails:
-            fn::split:
-              - ","
-              - ${accessAllowedEmails}
+      policies:
+        - name: Email OTP
+          decision: allow
+          precedence: 1
+          includes:
+            - email:
+                email: ${accessAllowedEmail}
 
   # ---------------------------------------------------------------------------
   # Email Routing — Catch-All Rule
   # ---------------------------------------------------------------------------
-  # Note: Email Routing must be enabled on the zone first (Cloudflare
-  # dashboard). The catch-all rule assumes email routing is already active.
-
-  catch-all:
-    type: cloudflare:EmailRoutingCatchAll
-    properties:
-      zoneId: ${zoneId}
-      name: Forward to Worker
-      enabled: true
-      matchers:
-        - type: all
-      actions:
-        - type: worker
-          values:
-            - ${workerName}
+  # Requires the Worker to be deployed first (`wrangler deploy`).
+  # Uncomment after initial Worker deployment, then run `pulumi up`.
+  #
+  # catch-all:
+  #   type: cloudflare:EmailRoutingCatchAll
+  #   properties:
+  #     zoneId: ${zoneId}
+  #     name: Forward to Worker
+  #     enabled: true
+  #     matchers:
+  #       - type: all
+  #     actions:
+  #       - type: worker
+  #         values:
+  #           - ${workerName}
 
 # ---------------------------------------------------------------------------
 # Outputs

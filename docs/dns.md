@@ -26,7 +26,7 @@ Authorizes Cloudflare to send on behalf of the base domain:
 
 | Name | Type | Content |
 |---|---|---|
-| `drop.example.com` | TXT | `v=spf1 include:_spf.mx.cloudflare.net ~all` |
+| `drop.example.com` | TXT | `v=spf1 include:_spf.mx.cloudflare.net -all` |
 
 ### CNAME Wildcard
 

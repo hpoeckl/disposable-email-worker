@@ -423,7 +423,7 @@ in Pulumi Cloud (free tier) or a self-managed backend.
 - [ ] Verify Google Workspace MX records on apex domain are intact.
 - [ ] Run `pulumi up` in `infra/` to provision:
   - [ ] MX record for `drop.example.com` → Cloudflare email routing.
-  - [ ] SPF record: `v=spf1 include:_spf.mx.cloudflare.net ~all`.
+  - [ ] SPF record: `v=spf1 include:_spf.mx.cloudflare.net -all`.
   - [ ] CNAME wildcard `*.drop.example.com -> drop.example.com`.
   - [ ] Email Routing catch-all → Email Worker.
   - [ ] Cloudflare Access application with email OTP policy.

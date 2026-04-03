@@ -39,24 +39,31 @@ In the Cloudflare dashboard:
 
 This step may be required before the catch-all rule can be created via Pulumi.
 
-## Step 4: Configure and Deploy Infrastructure
+## Step 4: Configure and Deploy Infrastructure (Phase 1)
+
+The catch-all email routing rule requires the Worker to exist first, so
+deployment happens in two phases. On first deploy, the catch-all block in
+`Pulumi.yaml` should remain commented out.
 
 ```bash
 cd infra
 pulumi stack init dev
 
-# Required configuration
+# Required configuration — all values must be non-empty
 pulumi config set zoneId <your-zone-id>
 pulumi config set accountId <your-account-id>
 pulumi config set baseDomain drop.example.com
 pulumi config set parentDomain example.com
-pulumi config set accessAllowedEmails "you@example.com"
+pulumi config set accessAllowedEmail "you@example.com"
 pulumi config set cloudflare:apiToken <your-api-token> --secret
 
 # Preview and deploy
 pulumi preview
 pulumi up
 ```
+
+This creates DNS records, D1 database, and Access application with inline
+email OTP policy.
 
 Note the D1 database ID from the output:
 
@@ -98,11 +105,33 @@ wrangler secret put CLOUDFLARE_ZONE_ID
 wrangler deploy
 ```
 
-## Step 9: Verify CNAME Wildcard
+## Step 9: Enable Email Routing Catch-All (Phase 2)
+
+Now that the Worker exists, uncomment the `catch-all` block in
+`infra/Pulumi.yaml` and deploy:
+
+```bash
+cd infra
+pulumi up
+```
+
+## Step 10: Run Smoke Tests
+
+Validate that infrastructure was provisioned correctly:
+
+```bash
+# Basic checks (DNS, Access gate, D1)
+./scripts/smoke-test.sh drop.example.com
+
+# Full checks (includes email routing API verification)
+CLOUDFLARE_API_TOKEN=<token> ./scripts/smoke-test.sh drop.example.com <zone-id>
+```
+
+## Step 11: Verify CNAME Wildcard
 
 Send a test email to `test@anyuser.drop.example.com` and check if the Worker processes it. See [dns.md](dns.md) for details.
 
-## Step 10: Test End-to-End
+## Step 12: Test End-to-End
 
 1. Open `https://drop.example.com` in a browser
 2. Authenticate via Cloudflare Access (email OTP)
