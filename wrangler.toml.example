@@ -13,9 +13,9 @@ database_id = ""  # Set via: pulumi -C infra stack output databaseId
 
 # Environment variables (non-secret)
 [vars]
-BASE_DOMAIN = ""  # e.g. "drop.example.com" — set to your base domain
+BASE_DOMAIN = ""      # e.g. "drop.example.com"
+ADMIN_USERS = ""      # e.g. "alice@example.com,bob@example.com"
 
 # Secrets (set via `wrangler secret put`):
-# - ADMIN_USERS
 # - CLOUDFLARE_API_TOKEN (only if CNAME wildcard fails)
 # - CLOUDFLARE_ZONE_ID (only if CNAME wildcard fails)
