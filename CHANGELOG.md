@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-04
+
+### Added
+
+- Per-alias sender whitelist with email, domain, and segment pattern matching
+- Whitelisted senders bypass counter and bandwidth limits
+- From header shows "(whitelisted)" for whitelisted senders
+- User-level rule engine with AND/OR conditions and block/reject/forward actions
+- Rules evaluated before all other checks, with optional recipient override
+- D1 data access layer for whitelist and rule tables (single JOIN query)
+
+## [0.1.0] - 2026-04-04
+
 ### Added
 
 - Project plan and architecture documentation
@@ -16,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Address parser for `<tag>@<user>.<baseDomain>` format
 - D1 data access layer (settings, aliases, recipients, failed deliveries)
 - From header rewriter with 5 display formats
-- MIME header rewriter with whitelist-based stripping
+- MIME header rewriter with whitelist-based header stripping
 - Email handler with raw MIME forwarding via SendEmail binding
 - Worker entry point (`email()` and stub `fetch()` handlers)
 - Post-deploy smoke test script with parent zone DNS checks
