@@ -7,6 +7,7 @@ export interface RewriteInput {
   limit: number;
   format: FromNameFormat;
   noReplyAddress: string; // e.g. "noreply@drop.example.com"
+  whitelisted?: boolean;
 }
 
 export interface RewriteResult {
@@ -18,8 +19,15 @@ export function rewriteHeaders(
   input: RewriteInput,
   originalSubject: string,
 ): RewriteResult {
-  const { sender, tag, forwarded, limit, format, noReplyAddress } = input;
+  const { sender, tag, forwarded, limit, format, noReplyAddress, whitelisted } = input;
   const counter = `[${forwarded}/${limit}]`;
+
+  if (whitelisted) {
+    return {
+      from: `"${esc(sender)} via ${esc(tag)} (whitelisted)" <${noReplyAddress}>`,
+      subject: null,
+    };
+  }
 
   switch (format) {
     case "sender_count_alias":

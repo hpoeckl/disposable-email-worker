@@ -211,6 +211,7 @@ export async function handleEmail(
       limit: alias.limit,
       format: settings.from_name_format,
       noReplyAddress: `noreply@${env.BASE_DOMAIN}`,
+      whitelisted: senderWhitelisted,
     },
     subject,
   );

@@ -100,4 +100,25 @@ describe("rewriteHeaders", () => {
       expect(result.from).toContain("[24/24]");
     });
   });
+
+  describe("whitelisted", () => {
+    it("overrides format to sender via tag (whitelisted)", () => {
+      const result = rewriteHeaders(
+        { ...base, whitelisted: true },
+        "Your order",
+      );
+      expect(result.from).toBe(
+        '"shop@amazon.com via amazon (whitelisted)" <noreply@drop.example.com>',
+      );
+      expect(result.subject).toBeNull();
+    });
+
+    it("ignores format setting when whitelisted", () => {
+      const result = rewriteHeaders(
+        { ...base, format: "noreply", whitelisted: true },
+        "Your order",
+      );
+      expect(result.from).toContain("via amazon (whitelisted)");
+    });
+  });
 });
