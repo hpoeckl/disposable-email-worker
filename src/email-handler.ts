@@ -10,8 +10,13 @@ import {
 } from "./db/aliases";
 import { getRecipientByEmail } from "./db/recipients";
 import { logFailedDelivery } from "./db/failed-deliveries";
+import { listWhitelistEntries } from "./db/whitelist";
+import { listRulesWithConditions } from "./db/rules";
+import { incrementRuleHit } from "./db/rules";
 import { rewriteHeaders } from "./header-rewriter";
 import { rewriteMimeHeaders } from "./mime";
+import { isWhitelisted } from "./whitelist-matcher";
+import { evaluateRules } from "./rule-engine";
 
 export interface Env {
   DB: D1Database;
@@ -61,6 +66,49 @@ export async function handleEmail(
     alias = await createAlias(db, user, tag, settings.default_limit);
   }
 
+  // --- Rule engine: evaluated first, short-circuits all other logic ---
+  const senderDomain = sender.includes("@")
+    ? sender.substring(sender.lastIndexOf("@") + 1)
+    : "";
+  const rules = await listRulesWithConditions(db, user);
+  const ruleMatch = evaluateRules(rules, {
+    sender,
+    senderDomain,
+    subject,
+    aliasTag: tag,
+  });
+
+  if (ruleMatch) {
+    await incrementRuleHit(db, ruleMatch.ruleId);
+
+    if (ruleMatch.action === "block") {
+      await logFailedDelivery(db, {
+        user,
+        alias_tag: tag,
+        sender,
+        subject,
+        reason: `rule_blocked: rule ${ruleMatch.ruleId}`,
+        message_size: messageSize,
+      });
+      return; // silently drop
+    }
+
+    if (ruleMatch.action === "reject") {
+      message.setReject("Rejected by rule");
+      await logFailedDelivery(db, {
+        user,
+        alias_tag: tag,
+        sender,
+        subject,
+        reason: `rule_rejected: rule ${ruleMatch.ruleId}`,
+        message_size: messageSize,
+      });
+      return;
+    }
+
+    // action === "forward": continue processing, but override recipients if set
+  }
+
   // Check if alias is active
   if (!alias.active) {
     await incrementRejected(db, alias.id);
@@ -76,8 +124,12 @@ export async function handleEmail(
     return;
   }
 
-  // Check counter limit
-  if (alias.forwarded >= alias.limit) {
+  // --- Whitelist check: whitelisted senders bypass counter/bandwidth ---
+  const whitelistEntries = await listWhitelistEntries(db, alias.id);
+  const senderWhitelisted = isWhitelisted(sender, whitelistEntries);
+
+  // Check counter limit (skip if whitelisted)
+  if (!senderWhitelisted && alias.forwarded >= alias.limit) {
     await incrementRejected(db, alias.id);
     message.setReject("Alias expired");
     await logFailedDelivery(db, {
@@ -91,8 +143,8 @@ export async function handleEmail(
     return;
   }
 
-  // Check bandwidth limit
-  if (settings.bandwidth_used + messageSize > settings.bandwidth_limit) {
+  // Check bandwidth limit (skip if whitelisted)
+  if (!senderWhitelisted && settings.bandwidth_used + messageSize > settings.bandwidth_limit) {
     await incrementRejected(db, alias.id);
     message.setReject("Bandwidth limit exceeded");
     await logFailedDelivery(db, {
@@ -106,8 +158,16 @@ export async function handleEmail(
     return;
   }
 
-  // Resolve forwarding recipients
-  let recipients = await getAliasRecipientEmails(db, alias.id);
+  // Resolve forwarding recipients (rule forward_to overrides default)
+  let recipients: string[] = [];
+
+  if (ruleMatch?.action === "forward" && ruleMatch.forwardTo) {
+    recipients = [ruleMatch.forwardTo];
+  }
+
+  if (recipients.length === 0) {
+    recipients = await getAliasRecipientEmails(db, alias.id);
+  }
 
   // Fallback: if no alias-specific recipients, use user's primary address
   if (recipients.length === 0) {
@@ -204,9 +264,11 @@ export async function handleEmail(
     return;
   }
 
-  // At least one forward succeeded
-  await incrementForwarded(db, alias.id, messageSize);
-  await addBandwidth(db, user, messageSize);
+  // At least one forward succeeded — skip counter for whitelisted senders
+  if (!senderWhitelisted) {
+    await incrementForwarded(db, alias.id, messageSize);
+    await addBandwidth(db, user, messageSize);
+  }
 
   // Log partial failures
   if (errors.length > 0) {

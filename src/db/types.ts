@@ -38,6 +38,46 @@ export interface Recipient {
   created_at: string;
 }
 
+export type WhitelistEntryType = "email" | "domain" | "segment";
+
+export interface WhitelistEntry {
+  id: number;
+  alias_id: number;
+  type: WhitelistEntryType;
+  pattern: string;
+}
+
+export type RuleOperator = "and" | "or";
+export type RuleAction = "forward" | "block" | "reject";
+export type ConditionField = "sender" | "sender_domain" | "subject" | "alias_tag";
+export type ConditionMatch = "equals" | "contains" | "starts_with" | "ends_with" | "regex";
+
+export interface Rule {
+  id: number;
+  user: string;
+  name: string;
+  priority: number;
+  operator: RuleOperator;
+  action: RuleAction;
+  forward_to: string | null;
+  active: number;
+  hit_count: number;
+  created_at: string;
+  last_hit_at: string | null;
+}
+
+export interface RuleCondition {
+  id: number;
+  rule_id: number;
+  field: ConditionField;
+  match: ConditionMatch;
+  value: string;
+}
+
+export interface RuleWithConditions extends Rule {
+  conditions: RuleCondition[];
+}
+
 export interface FailedDelivery {
   id: number;
   user: string;
