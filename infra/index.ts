@@ -50,6 +50,18 @@ const spf = new cloudflare.DnsRecord("spf", {
   ttl: 1,
 });
 
+// Proxied A record — routes HTTP traffic for the dashboard to Cloudflare.
+// 192.0.2.1 is a dummy (documentation) IP; Cloudflare's proxy handles the
+// actual routing to the Worker via the configured route/custom domain.
+const dashboardDns = new cloudflare.DnsRecord("dashboard-dns", {
+  zoneId,
+  name: baseDomain,
+  type: "A",
+  content: "192.0.2.1",
+  proxied: true,
+  ttl: 1,
+});
+
 // CNAME wildcard — route all per-user subdomains to the base domain.
 // Must be unproxied (DNS-only) for MX resolution.
 const wildcardCname = new cloudflare.DnsRecord("wildcard-cname", {

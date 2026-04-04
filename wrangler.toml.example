@@ -2,6 +2,10 @@ name = "disposable-email-worker"
 main = "src/index.ts"
 compatibility_date = "2025-04-01"
 
+# Custom domain — routes HTTP traffic to this Worker.
+# Requires a proxied DNS record (A or CNAME) for the base domain.
+# routes = [{ pattern = "drop.example.com/*", zone_name = "example.com" }]
+
 # D1 database binding — actual database_id set per environment
 [[d1_databases]]
 binding = "DB"
@@ -18,8 +22,10 @@ name = "SEB"
 
 # Environment variables (non-secret)
 [vars]
-BASE_DOMAIN = ""      # e.g. "drop.example.com"
-ADMIN_USERS = ""      # e.g. "alice@example.com,bob@example.com"
+BASE_DOMAIN = ""          # e.g. "drop.example.com"
+ADMIN_USERS = ""          # e.g. "alice@example.com,bob@example.com"
+CF_ACCESS_TEAM = ""       # Cloudflare Access team name (e.g. "myteam")
+CF_ACCESS_AUD = ""        # Access application audience tag (from Access app settings)
 
 # Secrets (set via `wrangler secret put`):
 # - CLOUDFLARE_API_TOKEN (only if CNAME wildcard fails)

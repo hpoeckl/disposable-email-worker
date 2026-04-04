@@ -23,6 +23,8 @@ export interface Env {
   SEB: SendEmail;
   BASE_DOMAIN: string;
   ADMIN_USERS?: string;
+  CF_ACCESS_TEAM?: string;
+  CF_ACCESS_AUD?: string;
 }
 
 export async function handleEmail(
