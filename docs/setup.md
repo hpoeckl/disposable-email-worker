@@ -43,18 +43,18 @@ This step may be required before the catch-all rule can be created via Pulumi.
 ## Step 4: Configure and Deploy Infrastructure (Phase 1)
 
 The catch-all email routing rule requires the Worker to exist first, so
-deployment happens in two phases. On first deploy, the catch-all block in
-`Pulumi.yaml` should remain commented out.
+deployment happens in two phases. The `enableCatchAll` config flag (default:
+`false`) gates the catch-all resource.
 
 ```bash
 cd infra
+npm install
 pulumi stack init dev
 
 # Required configuration — all values must be non-empty
 pulumi config set zoneId <your-zone-id>
 pulumi config set accountId <your-account-id>
 pulumi config set baseDomain drop.example.com
-pulumi config set parentDomain example.com
 pulumi config set accessAllowedEmail "you@example.com"
 pulumi config set cloudflare:apiToken <your-api-token> --secret
 
@@ -102,23 +102,47 @@ wrangler secret put CLOUDFLARE_API_TOKEN
 wrangler secret put CLOUDFLARE_ZONE_ID
 ```
 
-## Step 8: Deploy the Worker
+## Step 8: Configure Parent Zone DNS (SPF/DKIM/DMARC)
+
+Cloudflare's SendEmail uses SRS and DKIM signing on the parent domain.
+Without these records, forwarded emails will fail SPF/DMARC checks.
+
+See [dns.md](dns.md#parent-zone-dns-requirements) for full details. In short:
+
+1. **SPF**: Add `include:_spf.mx.cloudflare.net` to the SPF record on `example.com`
+2. **DKIM**: Verify `cf2024-1._domainkey.example.com` exists (auto-provisioned by Cloudflare)
+3. **DMARC**: Add a DMARC record via **Email > DMARC Management** in the dashboard
+
+## Step 9: Verify Destination Addresses (Cloudflare Requirement)
+
+Cloudflare Email Routing requires each forwarding destination to be verified
+at the zone level before `message.forward()` will succeed. This is a
+Cloudflare restriction — not manageable via Pulumi or the API.
+
+1. Go to Cloudflare Dashboard > your zone > **Email** > **Email Routing**
+   > **Destination addresses**
+2. Add each email address that aliases will forward to
+3. Click the verification link sent to each address
+
+This is a one-time step per destination address.
+
+## Step 10: Deploy the Worker
 
 ```bash
 wrangler deploy
 ```
 
-## Step 9: Enable Email Routing Catch-All (Phase 2)
+## Step 11: Enable Email Routing Catch-All
 
-Now that the Worker exists, uncomment the `catch-all` block in
-`infra/Pulumi.yaml` and deploy:
+Now that the Worker exists, enable the catch-all via config flag:
 
 ```bash
 cd infra
+pulumi config set enableCatchAll true
 pulumi up
 ```
 
-## Step 10: Run Smoke Tests
+## Step 12: Run Smoke Tests
 
 Validate that infrastructure was provisioned correctly:
 
@@ -130,11 +154,11 @@ Validate that infrastructure was provisioned correctly:
 CLOUDFLARE_API_TOKEN=<token> ./scripts/smoke-test.sh drop.example.com <zone-id>
 ```
 
-## Step 11: Verify CNAME Wildcard
+## Step 13: Verify CNAME Wildcard
 
 Send a test email to `test@anyuser.drop.example.com` and check if the Worker processes it. See [dns.md](dns.md) for details.
 
-## Step 12: Test End-to-End
+## Step 14: Test End-to-End
 
 1. Open `https://drop.example.com` in a browser
 2. Authenticate via Cloudflare Access (email OTP)
@@ -146,6 +170,7 @@ Send a test email to `test@anyuser.drop.example.com` and check if the Worker pro
 ```bash
 git pull
 npm install
+cd infra && npm install && cd ..
 
 # If infrastructure changed
 cd infra && pulumi up && cd ..

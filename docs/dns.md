@@ -53,6 +53,47 @@ The primary approach assumes Cloudflare Email Routing follows the CNAME and proc
 - `CLOUDFLARE_ZONE_ID` secret
 - A few minutes of DNS propagation delay on first user login
 
+## Parent Zone DNS Requirements
+
+Cloudflare's SendEmail rewrites the envelope sender via SRS to `@example.com`
+(the parent zone), and signs DKIM with `d=example.com`. This means the
+**parent zone** (not `drop.example.com`) needs these records for SPF, DKIM,
+and DMARC to pass:
+
+### SPF on parent zone
+
+Add `include:_spf.mx.cloudflare.net` to the existing SPF record on `example.com`:
+
+```
+v=spf1 <existing-includes> include:_spf.mx.cloudflare.net -all
+```
+
+### DKIM on parent zone
+
+Cloudflare signs with selector `cf2024-1`. The public key record
+`cf2024-1._domainkey.example.com` should be provisioned automatically when
+Email Routing is enabled. Verify:
+
+```bash
+dig TXT cf2024-1._domainkey.example.com +short
+```
+
+If missing, check **Email > Email Routing > Settings** in the Cloudflare
+dashboard.
+
+### DMARC on parent zone
+
+Add a DMARC record on `_dmarc.example.com`. Cloudflare offers a default
+record via **Email > DMARC Management**:
+
+```
+v=DMARC1; p=none; rua=mailto:<cloudflare-generated>@dmarc-reports.cloudflare.net
+```
+
+With relaxed alignment (`aspf=r`, `adkim=r` — the defaults), DMARC passes
+because the organizational domain (`example.com`) matches across SPF/DKIM and
+the header From (`drop.example.com`).
+
 ## Preserving Existing MX Records
 
 The gateway only creates records on `drop.example.com` and its subdomains. Your apex domain MX records (e.g., Google Workspace on `example.com`) are not modified.
@@ -73,7 +114,8 @@ dig MX drop.example.com +short     # Should show Cloudflare email routing MX
 4. Check the CNAME wildcard resolves: `dig CNAME test.drop.example.com +short`
 
 **SPF failures on forwarded mail**:
-- Cloudflare Email Routing handles SPF alignment for forwarded messages. The SPF record on the base domain authorizes Cloudflare's infrastructure.
+- Cloudflare's SendEmail uses SRS (Sender Rewriting Scheme), rewriting the envelope sender to `@example.com` (parent domain). The SPF record on the **parent zone** must include Cloudflare's email infrastructure. See "Parent Zone DNS Requirements" above.
 
 **DKIM/DMARC**:
-- Cloudflare Email Routing preserves original DKIM signatures on forwarded messages. No additional DKIM setup is needed for the base domain.
+- Cloudflare signs outbound messages with a DKIM key on the parent domain (selector `cf2024-1`). Verify the DKIM record exists: `dig TXT cf2024-1._domainkey.example.com`. If missing, enable it via **Email > Email Routing** in the Cloudflare dashboard.
+- DMARC must be configured on the parent domain. Cloudflare's dashboard offers a default DMARC record under **Email > DMARC Management**.

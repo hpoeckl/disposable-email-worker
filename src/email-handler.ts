@@ -1,3 +1,4 @@
+import { EmailMessage } from "cloudflare:email";
 import { parseRecipient } from "./address-parser";
 import { getSettings, addBandwidth } from "./db/settings";
 import {
@@ -10,9 +11,11 @@ import {
 import { getRecipientByEmail } from "./db/recipients";
 import { logFailedDelivery } from "./db/failed-deliveries";
 import { rewriteHeaders } from "./header-rewriter";
+import { rewriteMimeHeaders } from "./mime";
 
 export interface Env {
   DB: D1Database;
+  SEB: SendEmail;
   BASE_DOMAIN: string;
   ADMIN_USERS?: string;
 }
@@ -152,21 +155,38 @@ export async function handleEmail(
     subject,
   );
 
-  const newHeaders = new Headers(message.headers);
+  // Build MIME header overrides
+  const mimeOverrides: Record<string, string> = {
+    "Reply-To": sender,
+    "X-Original-From": sender,
+    "X-Alias-Tag": tag,
+  };
   if (rewrite.from) {
-    newHeaders.set("From", rewrite.from);
+    mimeOverrides["From"] = rewrite.from;
   }
   if (rewrite.subject) {
-    newHeaders.set("Subject", rewrite.subject);
+    mimeOverrides["Subject"] = rewrite.subject;
   }
 
-  // Forward to all recipients
+  // Rewrite raw MIME — whitelist strips ARC/DKIM/Exchange headers that
+  // Cloudflare SendEmail rejects as "invalid headers set".
+  const modifiedRaw = await rewriteMimeHeaders(message.raw, mimeOverrides);
+
+  // Forward via raw MIME EmailMessage — preserves original body/attachments
   const errors: string[] = [];
+  const envelopeFrom = `noreply@${env.BASE_DOMAIN}`;
   for (const recipient of recipients) {
     try {
-      await message.forward(recipient, newHeaders);
+      const msg = new EmailMessage(
+        envelopeFrom,
+        recipient,
+        new Blob([modifiedRaw]).stream(),
+      );
+      await env.SEB.send(msg);
     } catch (err) {
-      errors.push(`${recipient}: ${err instanceof Error ? err.message : String(err)}`);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error("Send failed:", errMsg);
+      errors.push(`${recipient}: ${errMsg}`);
     }
   }
 
@@ -206,3 +226,4 @@ function getPrimaryDomain(baseDomain: string): string {
   const parts = baseDomain.split(".");
   return parts.slice(1).join(".");
 }
+

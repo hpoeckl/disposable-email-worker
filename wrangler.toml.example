@@ -8,6 +8,11 @@ binding = "DB"
 database_name = "disposable-email-db"
 database_id = ""  # Set via: pulumi -C infra stack output databaseId
 
+# Send Email binding — used to forward with rewritten headers.
+# message.forward() only allows X-* headers; SEB allows full MIME control.
+[[send_email]]
+name = "SEB"
+
 # Email routing — Worker receives inbound email via exported `email` handler
 # Catch-all configured via Pulumi after first deploy
 
