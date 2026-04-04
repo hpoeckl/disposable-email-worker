@@ -51,6 +51,21 @@ check "SPF record exists for ${BASE_DOMAIN}" \
 check "CNAME wildcard resolves for test.${BASE_DOMAIN}" \
   bash -c "dig +short CNAME test.${BASE_DOMAIN} | grep -qi '${BASE_DOMAIN}'"
 
+# Parent zone: strip first label from base domain (drop.example.com → example.com)
+PARENT_DOMAIN="${BASE_DOMAIN#*.}"
+
+echo ""
+echo "=== Parent Zone DNS (${PARENT_DOMAIN}) ==="
+
+check "SPF on ${PARENT_DOMAIN} includes Cloudflare" \
+  bash -c "dig +short TXT ${PARENT_DOMAIN} | grep -q '_spf.mx.cloudflare.net'"
+
+check "DKIM key cf2024-1._domainkey.${PARENT_DOMAIN} exists" \
+  bash -c "dig +short TXT cf2024-1._domainkey.${PARENT_DOMAIN} | grep -q 'DKIM1'"
+
+check "DMARC record exists on _dmarc.${PARENT_DOMAIN}" \
+  bash -c "dig +short TXT _dmarc.${PARENT_DOMAIN} | grep -q 'DMARC1'"
+
 echo ""
 echo "=== Cloudflare Access ==="
 
