@@ -1,5 +1,6 @@
 import { Env } from "./email-handler";
 import { validateAccessJwt, AuthError } from "./auth";
+import { renderDashboard } from "./ui";
 
 export interface RequestContext {
   user: string;      // derived from JWT email localpart
@@ -48,8 +49,7 @@ export async function handleFetch(
 
   // Serve UI for non-API routes
   if (!path.startsWith("/api/")) {
-    // Will be implemented — serve static HTML
-    return new Response("Not implemented", { status: 501 });
+    return renderDashboard();
   }
 
   // CORS preflight
@@ -131,6 +131,23 @@ async function buildContext(
     params: {},
   };
 }
+
+/**
+ * Resolve effective user: admins can use ?user= to act on behalf of another user.
+ */
+export function effectiveUser(ctx: RequestContext, request: Request): string {
+  if (ctx.isAdmin) {
+    const url = new URL(request.url);
+    const targetUser = url.searchParams.get("user");
+    if (targetUser) return targetUser;
+  }
+  return ctx.user;
+}
+
+// Built-in route: current user info
+route("GET", "/api/me", async (ctx) => {
+  return json({ user: ctx.user, email: ctx.email, isAdmin: ctx.isAdmin });
+});
 
 export function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {

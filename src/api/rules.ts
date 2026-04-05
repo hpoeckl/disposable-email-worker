@@ -1,4 +1,4 @@
-import { route, json } from "../router";
+import { route, json, effectiveUser } from "../router";
 import {
   listRulesWithConditions,
   getRuleWithConditions,
@@ -15,9 +15,9 @@ import type {
   ConditionMatch,
 } from "../db/types";
 
-route("GET", "/api/rules", async (ctx) => {
-  const rules = await listRulesWithConditions(ctx.db, ctx.user);
-  return json(rules);
+route("GET", "/api/rules", async (ctx, request) => {
+  const user = effectiveUser(ctx, request);
+  return json(await listRulesWithConditions(ctx.db, user));
 });
 
 route("POST", "/api/rules", async (ctx, request) => {
@@ -35,13 +35,14 @@ route("POST", "/api/rules", async (ctx, request) => {
     return json({ error: "At least one condition is required" }, 400);
   }
 
-  const rule = await createRule(ctx.db, ctx.user, body);
+  const user = effectiveUser(ctx, request);
+  const rule = await createRule(ctx.db, user, body);
   return json(rule, 201);
 });
 
 route("GET", "/api/rules/:id", async (ctx) => {
   const rule = await getRuleWithConditions(ctx.db, parseInt(ctx.params.id));
-  if (!rule || rule.user !== ctx.user) {
+  if (!rule || (!ctx.isAdmin && rule.user !== ctx.user)) {
     return json({ error: "Rule not found" }, 404);
   }
   return json(rule);
@@ -50,7 +51,7 @@ route("GET", "/api/rules/:id", async (ctx) => {
 route("PATCH", "/api/rules/:id", async (ctx, request) => {
   const ruleId = parseInt(ctx.params.id);
   const existing = await getRuleWithConditions(ctx.db, ruleId);
-  if (!existing || existing.user !== ctx.user) {
+  if (!existing || (!ctx.isAdmin && existing.user !== ctx.user)) {
     return json({ error: "Rule not found" }, 404);
   }
 
@@ -87,7 +88,7 @@ route("PATCH", "/api/rules/:id", async (ctx, request) => {
 route("DELETE", "/api/rules/:id", async (ctx) => {
   const ruleId = parseInt(ctx.params.id);
   const existing = await getRuleWithConditions(ctx.db, ruleId);
-  if (!existing || existing.user !== ctx.user) {
+  if (!existing || (!ctx.isAdmin && existing.user !== ctx.user)) {
     return json({ error: "Rule not found" }, 404);
   }
 
@@ -101,7 +102,8 @@ route("POST", "/api/rules/reorder", async (ctx, request) => {
     return json({ error: "rule_ids array is required" }, 400);
   }
 
-  await reorderRules(ctx.db, ctx.user, body.rule_ids);
-  const rules = await listRulesWithConditions(ctx.db, ctx.user);
+  const user = effectiveUser(ctx, request);
+  await reorderRules(ctx.db, user, body.rule_ids);
+  const rules = await listRulesWithConditions(ctx.db, user);
   return json(rules);
 });

@@ -1,19 +1,21 @@
 name = "disposable-email-worker"
 main = "src/index.ts"
 compatibility_date = "2025-04-01"
+workers_dev = false  # Disable workers.dev route — all traffic goes through custom domain + Access
 
 # Custom domain — routes HTTP traffic to this Worker.
 # Requires a proxied DNS record (A or CNAME) for the base domain.
+# Uncomment and set to your domain:
 # routes = [{ pattern = "drop.example.com/*", zone_name = "example.com" }]
 
-# D1 database binding — actual database_id set per environment
+# D1 database binding
 [[d1_databases]]
 binding = "DB"
 database_name = "disposable-email-db"
 database_id = ""  # Set via: pulumi -C infra stack output databaseId
 
-# Send Email binding — used to forward with rewritten headers.
-# message.forward() only allows X-* headers; SEB allows full MIME control.
+# Send Email binding — used to forward with rewritten MIME headers.
+# See docs/known-limitations.md for same-zone delivery restrictions.
 [[send_email]]
 name = "SEB"
 
@@ -22,11 +24,13 @@ name = "SEB"
 
 # Environment variables (non-secret)
 [vars]
-BASE_DOMAIN = ""          # e.g. "drop.example.com"
-ADMIN_USERS = ""          # e.g. "alice@example.com,bob@example.com"
-CF_ACCESS_TEAM = ""       # Cloudflare Access team name (e.g. "myteam")
-CF_ACCESS_AUD = ""        # Access application audience tag (from Access app settings)
+BASE_DOMAIN = ""            # Your base domain, e.g. "drop.example.com"
+ADMIN_USERS = ""            # Comma-separated full email addresses of admins
+CF_ACCESS_TEAM = ""         # Cloudflare Access team name (just the subdomain, e.g. "myteam")
+CF_ACCESS_AUD = ""          # Access application audience tag (from Access > Applications > your app > Overview)
+CLOUDFLARE_ACCOUNT_ID = ""  # Account ID (visible in dashboard URL or wrangler whoami output)
 
 # Secrets (set via `wrangler secret put`):
-# - CLOUDFLARE_API_TOKEN (only if CNAME wildcard fails)
-# - CLOUDFLARE_ZONE_ID (only if CNAME wildcard fails)
+# - CLOUDFLARE_API_TOKEN — required for auto-creating/deleting Email Routing
+#   destination addresses. Create at https://dash.cloudflare.com/profile/api-tokens
+#   with "Email Routing Addresses: Edit" permission.

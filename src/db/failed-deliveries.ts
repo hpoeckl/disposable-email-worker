@@ -40,6 +40,15 @@ export async function listFailedDeliveries(
   return result.results;
 }
 
+export async function listAllFailedDeliveries(
+  db: D1Database,
+): Promise<FailedDelivery[]> {
+  const result = await db
+    .prepare("SELECT * FROM failed_deliveries ORDER BY created_at DESC")
+    .all<FailedDelivery>();
+  return result.results;
+}
+
 export async function deleteFailedDelivery(
   db: D1Database,
   user: string,

@@ -91,16 +91,13 @@ wrangler d1 migrations apply disposable-email-db --local
 ## Step 7: Set Worker Secrets
 
 ```bash
-wrangler secret put ADMIN_USERS
-# Enter comma-separated admin emails, e.g.: admin@example.com,ops@example.com
-```
-
-If the CNAME wildcard approach fails (see [dns.md](dns.md)):
-
-```bash
+# Required — for Email Routing destination address management
 wrangler secret put CLOUDFLARE_API_TOKEN
-wrangler secret put CLOUDFLARE_ZONE_ID
+# Create a token at https://dash.cloudflare.com/profile/api-tokens
+# Required permission: Email Routing Addresses: Edit
 ```
+
+`ADMIN_USERS` and `CLOUDFLARE_ACCOUNT_ID` are set in `wrangler.toml` `[vars]` (not secrets).
 
 ## Step 8: Configure Parent Zone DNS (SPF/DKIM/DMARC)
 
@@ -115,16 +112,24 @@ See [dns.md](dns.md#parent-zone-dns-requirements) for full details. In short:
 
 ## Step 9: Verify Destination Addresses (Cloudflare Requirement)
 
-Cloudflare Email Routing requires each forwarding destination to be verified
-at the zone level before `message.forward()` will succeed. This is a
-Cloudflare restriction — not manageable via Pulumi or the API.
+Cloudflare Email Routing requires each forwarding destination to be a verified
+destination address. When `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`
+are configured, this is automated:
+
+1. Add a recipient in the dashboard — the Worker creates the CF destination address via API
+2. Cloudflare sends a verification email to the address
+3. The recipient clicks the verification link
+4. Click **Sync CF** in the dashboard to update the verification status
+
+Without the API token, destination addresses must be added manually:
 
 1. Go to Cloudflare Dashboard > your zone > **Email** > **Email Routing**
    > **Destination addresses**
 2. Add each email address that aliases will forward to
 3. Click the verification link sent to each address
 
-This is a one-time step per destination address.
+**Important**: Recipients on the same Cloudflare zone cannot receive mail
+via the SendEmail binding. See [known-limitations.md](known-limitations.md).
 
 ## Step 10: Deploy the Worker
 

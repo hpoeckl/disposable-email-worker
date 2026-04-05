@@ -1,7 +1,8 @@
 # Infrastructure (Pulumi)
 
 All Cloudflare infrastructure is managed via Pulumi with TypeScript. The stack
-is defined in `infra/index.ts`.
+is defined in `infra/index.ts` (converted from YAML to support conditional
+resources like the catch-all rule).
 
 ## Managed Resources
 

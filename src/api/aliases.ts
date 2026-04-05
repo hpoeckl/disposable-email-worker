@@ -1,4 +1,4 @@
-import { route, json, RequestContext } from "../router";
+import { route, json, effectiveUser, RequestContext } from "../router";
 import {
   listAliases,
   listAllAliases,
@@ -9,38 +9,36 @@ import {
   resetCounter,
 } from "../db/aliases";
 
-route("GET", "/api/aliases", async (ctx) => {
-  const aliases = ctx.isAdmin
-    ? await listAllAliases(ctx.db)
-    : await listAliases(ctx.db, ctx.user);
-  return json(aliases);
+route("GET", "/api/aliases", async (ctx, request) => {
+  const user = effectiveUser(ctx, request);
+  // Admin without ?user= sees all; with ?user= sees that user's aliases
+  if (ctx.isAdmin && user === ctx.user) {
+    return json(await listAllAliases(ctx.db));
+  }
+  return json(await listAliases(ctx.db, user));
 });
 
 route("POST", "/api/aliases", async (ctx, request) => {
   const body = await request.json<{ tag: string; limit?: number; description?: string }>();
   if (!body.tag) return json({ error: "tag is required" }, 400);
 
-  const existing = await getAlias(ctx.db, ctx.user, body.tag);
+  const user = effectiveUser(ctx, request);
+
+  const existing = await getAlias(ctx.db, user, body.tag);
   if (existing) return json({ error: "Alias already exists" }, 409);
 
-  const alias = await createAlias(
-    ctx.db,
-    ctx.user,
-    body.tag,
-    body.limit ?? 24,
-    body.description,
-  );
+  const alias = await createAlias(ctx.db, user, body.tag, body.limit ?? 24, body.description);
   return json(alias, 201);
 });
 
-route("GET", "/api/aliases/:tag", async (ctx) => {
-  const alias = await resolveAlias(ctx);
+route("GET", "/api/aliases/:tag", async (ctx, request) => {
+  const alias = await resolveAlias(ctx, request);
   if (!alias) return json({ error: "Alias not found" }, 404);
   return json(alias);
 });
 
 route("PATCH", "/api/aliases/:tag", async (ctx, request) => {
-  const alias = await resolveAlias(ctx);
+  const alias = await resolveAlias(ctx, request);
   if (!alias) return json({ error: "Alias not found" }, 404);
 
   const body = await request.json<{
@@ -67,23 +65,22 @@ route("PATCH", "/api/aliases/:tag", async (ctx, request) => {
   return json(updated);
 });
 
-route("DELETE", "/api/aliases/:tag", async (ctx) => {
-  const alias = await resolveAlias(ctx);
+route("DELETE", "/api/aliases/:tag", async (ctx, request) => {
+  const alias = await resolveAlias(ctx, request);
   if (!alias) return json({ error: "Alias not found" }, 404);
 
   await deleteAlias(ctx.db, alias.user, alias.tag);
   return json({ ok: true });
 });
 
-async function resolveAlias(ctx: RequestContext) {
+async function resolveAlias(ctx: RequestContext, request: Request) {
   const { tag } = ctx.params;
-  // Admin can access any user's aliases via ?user= query param
-  // Regular users can only access their own
-  const alias = await getAlias(ctx.db, ctx.user, tag);
+  const user = effectiveUser(ctx, request);
+  const alias = await getAlias(ctx.db, user, tag);
   if (alias) return alias;
 
-  // Admin fallback: search all users
-  if (ctx.isAdmin) {
+  // Admin without ?user=: search all users
+  if (ctx.isAdmin && user === ctx.user) {
     const all = await listAllAliases(ctx.db);
     return all.find((a) => a.tag === tag) ?? null;
   }

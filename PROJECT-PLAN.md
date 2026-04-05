@@ -580,39 +580,37 @@ Tags follow `v0.1.0` format. Changelog maintained in `CHANGELOG.md`
 
 ### Phase 3 — API & Auth
 
-22. Implement `fetch()` handler with route dispatcher.
-23. Implement Cloudflare Access JWT validation middleware.
-24. Implement user-scoping: derive `user` from JWT email, filter queries.
-25. Implement admin check against `ADMIN_USERS` env var.
-26. Implement alias API endpoints (user-scoped + admin override).
-27. Implement recipient API endpoints (add, verify, remove).
-28. Implement whitelist API endpoints.
-29. Implement rule API endpoints (CRUD + reorder).
-30. Implement failed deliveries API endpoints.
-31. Implement user settings API endpoints.
-32. API integration tests (including auth/admin scenarios).
+22. [x] Implement `fetch()` handler with route dispatcher.
+23. [x] Implement Cloudflare Access JWT validation middleware.
+24. [x] Implement user-scoping: derive `user` from JWT email, filter queries.
+25. [x] Implement admin check against `ADMIN_USERS` env var.
+26. [x] Implement alias API endpoints (user-scoped + admin override).
+27. [x] Implement recipient API endpoints (add, verify via CF API, remove).
+28. [x] Implement whitelist API endpoints.
+29. [x] Implement rule API endpoints (CRUD + reorder).
+30. [x] Implement failed deliveries API endpoints.
+31. [x] Implement user settings API endpoints.
+32. [ ] API integration tests (including auth/admin scenarios).
 
 ### Phase 4 — Web UI
 
-33. Build responsive SPA (mobile-first).
-34. Alias list view with status, counts, description, search/filter.
-35. Alias detail/edit view (reset, limit change, toggle, description,
-    recipients).
-36. Whitelist management per alias.
-37. Rule management: list, create, edit, reorder, toggle.
-38. Failed deliveries view.
-39. User settings page (catch-all, from-name format, default limit).
-40. Bandwidth usage display.
-41. Admin view: user switcher, cross-user alias management.
-42. Deploy UI via Cloudflare Pages or serve from Worker.
+33. [x] Build responsive SPA (mobile-first, served from Worker).
+34. [x] Alias list view with status, counts, description, whitelist count, search/filter.
+35. [x] Alias detail/edit view (reset, limit change, toggle, description).
+36. [x] Whitelist management per alias.
+37. [x] Rule management: list, create, edit, reorder, toggle.
+38. [x] Failed deliveries view (with user column for admin).
+39. [x] User settings page (catch-all, from-name format, default limit).
+40. [x] Bandwidth usage display.
+41. [x] Admin view: user switcher, cross-user management, "acting as" labels.
+42. [x] Deploy UI served from Worker (no separate Pages deployment).
 
 ### Phase 5 — CI/CD & Documentation
 
-43. GitHub Actions workflow: lint, test, `pulumi preview`, `wrangler deploy`.
-44. Write `README.md` (quick start, architecture, deployment).
-45. Write `docs/` pages (DNS, infrastructure, Cloudflare Access, address
-    format, rules).
-46. Review repo for any leaked personal data or secrets. Tag `v0.1.0`.
+43. [ ] GitHub Actions workflow: lint, test, `pulumi preview`, `wrangler deploy`.
+44. [x] Write `README.md` (quick start, architecture, deployment).
+45. [x] Write `docs/` pages (DNS, infrastructure, API reference, known limitations).
+46. [ ] Review repo for any leaked personal data or secrets. Tag release.
 
 ---
 

@@ -56,7 +56,7 @@ Browser ───────▶ Cloudflare Access ──▶ Same Worker (fetch 
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) >= 4
 - [Pulumi CLI](https://www.pulumi.com/docs/install/) >= 3
 - A Cloudflare account with a domain configured
-- Cloudflare API token with permissions: `Zone.DNS:Edit`, `Email Routing:Edit`, `Access:Edit`, `D1:Edit`
+- Cloudflare API token with permissions: `Zone.DNS:Edit`, `Email Routing:Edit`, `Email Routing Addresses:Edit`, `Access:Edit`, `D1:Edit`
 
 ## Quick Start
 
@@ -104,21 +104,33 @@ pulumi stack output databaseId
 wrangler d1 migrations apply disposable-email-db
 ```
 
-### 6. Set Worker secrets
+### 6. Configure wrangler.toml
+
+Set the required variables in `[vars]`:
+
+- `BASE_DOMAIN` — your base domain (e.g., `drop.example.com`)
+- `ADMIN_USERS` — comma-separated admin emails
+- `CF_ACCESS_TEAM` — Cloudflare Access team name
+- `CF_ACCESS_AUD` — Access application audience tag
+- `CLOUDFLARE_ACCOUNT_ID` — your Cloudflare account ID
+
+### 7. Set Worker secrets
 
 ```bash
-wrangler secret put ADMIN_USERS   # comma-separated admin emails
+wrangler secret put CLOUDFLARE_API_TOKEN  # Email Routing destination management
 ```
 
-### 7. Deploy
+### 8. Deploy
 
 ```bash
 wrangler deploy
 ```
 
-### 8. Verify
+### 9. Verify
 
-Send an email to `test@<user>.drop.example.com` and confirm it forwards to your inbox.
+1. Open `https://drop.example.com` — authenticate via Cloudflare Access
+2. Add a recipient email in the dashboard, verify it via the link Cloudflare sends
+3. Send an email to `test@<user>.drop.example.com` and confirm it forwards
 
 ## Development
 
@@ -136,13 +148,18 @@ npm run migrate:local # Apply migrations to local D1
 ├── migrations/         D1 SQL migrations
 ├── src/                Worker source code
 │   ├── api/            REST API route handlers
-│   └── db/             D1 data access layer
-├── ui/                 Web dashboard (SPA)
+│   ├── db/             D1 data access layer
+│   └── ui.ts           Dashboard SPA (served from Worker)
 ├── test/               Tests
 └── docs/               Technical documentation
 ```
 
-See [docs/](docs/) for detailed documentation on DNS setup, infrastructure, Cloudflare Access configuration, and address format conventions.
+See [docs/](docs/) for detailed documentation:
+- [API Reference](docs/api.md)
+- [Deployment Guide](docs/setup.md)
+- [DNS Setup](docs/dns.md)
+- [Infrastructure](docs/infrastructure.md)
+- [Known Limitations](docs/known-limitations.md)
 
 ## Versioning
 

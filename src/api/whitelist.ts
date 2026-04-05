@@ -1,5 +1,5 @@
-import { route, json } from "../router";
-import { getAlias } from "../db/aliases";
+import { route, json, effectiveUser } from "../router";
+import { getAlias, listAllAliases } from "../db/aliases";
 import {
   listWhitelistEntries,
   addWhitelistEntry,
@@ -7,8 +7,22 @@ import {
 } from "../db/whitelist";
 import type { WhitelistEntryType } from "../db/types";
 
-route("GET", "/api/aliases/:tag/whitelist", async (ctx) => {
-  const alias = await getAlias(ctx.db, ctx.user, ctx.params.tag);
+async function resolveAlias(ctx: import("../router").RequestContext, request: Request) {
+  const { tag } = ctx.params;
+  const user = effectiveUser(ctx, request);
+  const alias = await getAlias(ctx.db, user, tag);
+  if (alias) return alias;
+
+  // Admin without ?user=: search all users
+  if (ctx.isAdmin && user === ctx.user) {
+    const all = await listAllAliases(ctx.db);
+    return all.find((a) => a.tag === tag) ?? null;
+  }
+  return null;
+}
+
+route("GET", "/api/aliases/:tag/whitelist", async (ctx, request) => {
+  const alias = await resolveAlias(ctx, request);
   if (!alias) return json({ error: "Alias not found" }, 404);
 
   const entries = await listWhitelistEntries(ctx.db, alias.id);
@@ -16,7 +30,7 @@ route("GET", "/api/aliases/:tag/whitelist", async (ctx) => {
 });
 
 route("POST", "/api/aliases/:tag/whitelist", async (ctx, request) => {
-  const alias = await getAlias(ctx.db, ctx.user, ctx.params.tag);
+  const alias = await resolveAlias(ctx, request);
   if (!alias) return json({ error: "Alias not found" }, 404);
 
   const body = await request.json<{ type: WhitelistEntryType; pattern: string }>();
@@ -33,8 +47,8 @@ route("POST", "/api/aliases/:tag/whitelist", async (ctx, request) => {
   return json(entry, 201);
 });
 
-route("DELETE", "/api/aliases/:tag/whitelist/:id", async (ctx) => {
-  const alias = await getAlias(ctx.db, ctx.user, ctx.params.tag);
+route("DELETE", "/api/aliases/:tag/whitelist/:id", async (ctx, request) => {
+  const alias = await resolveAlias(ctx, request);
   if (!alias) return json({ error: "Alias not found" }, 404);
 
   await removeWhitelistEntry(ctx.db, parseInt(ctx.params.id));

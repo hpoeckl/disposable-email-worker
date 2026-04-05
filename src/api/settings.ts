@@ -1,13 +1,15 @@
-import { route, json } from "../router";
+import { route, json, effectiveUser } from "../router";
 import { getSettings, updateSettings } from "../db/settings";
 import type { FromNameFormat } from "../db/types";
 
-route("GET", "/api/settings", async (ctx) => {
-  const settings = await getSettings(ctx.db, ctx.user);
+route("GET", "/api/settings", async (ctx, request) => {
+  const user = effectiveUser(ctx, request);
+  const settings = await getSettings(ctx.db, user);
   return json(settings);
 });
 
 route("PATCH", "/api/settings", async (ctx, request) => {
+  const user = effectiveUser(ctx, request);
   const body = await request.json<{
     catch_all?: boolean;
     from_name_format?: FromNameFormat;
@@ -20,9 +22,9 @@ route("PATCH", "/api/settings", async (ctx, request) => {
   if (body.default_limit !== undefined) updates.default_limit = body.default_limit;
 
   if (Object.keys(updates).length > 0) {
-    await updateSettings(ctx.db, ctx.user, updates);
+    await updateSettings(ctx.db, user, updates);
   }
 
-  const settings = await getSettings(ctx.db, ctx.user);
+  const settings = await getSettings(ctx.db, user);
   return json(settings);
 });

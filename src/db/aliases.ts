@@ -16,7 +16,10 @@ export async function listAliases(
   user: string,
 ): Promise<Alias[]> {
   const result = await db
-    .prepare("SELECT * FROM aliases WHERE user = ? ORDER BY created_at DESC")
+    .prepare(
+      `SELECT a.*, (SELECT COUNT(*) FROM whitelist_entries w WHERE w.alias_id = a.id) AS whitelist_count
+       FROM aliases a WHERE a.user = ? ORDER BY a.created_at DESC`,
+    )
     .bind(user)
     .all<Alias>();
   return result.results;
@@ -24,7 +27,10 @@ export async function listAliases(
 
 export async function listAllAliases(db: D1Database): Promise<Alias[]> {
   const result = await db
-    .prepare("SELECT * FROM aliases ORDER BY user, created_at DESC")
+    .prepare(
+      `SELECT a.*, (SELECT COUNT(*) FROM whitelist_entries w WHERE w.alias_id = a.id) AS whitelist_count
+       FROM aliases a ORDER BY a.user, a.created_at DESC`,
+    )
     .all<Alias>();
   return result.results;
 }

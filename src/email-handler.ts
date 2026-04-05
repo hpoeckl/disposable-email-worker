@@ -8,7 +8,6 @@ import {
   incrementRejected,
   getAliasRecipientEmails,
 } from "./db/aliases";
-import { getRecipientByEmail } from "./db/recipients";
 import { logFailedDelivery } from "./db/failed-deliveries";
 import { listWhitelistEntries } from "./db/whitelist";
 import { listRulesWithConditions } from "./db/rules";
@@ -25,6 +24,8 @@ export interface Env {
   ADMIN_USERS?: string;
   CF_ACCESS_TEAM?: string;
   CF_ACCESS_AUD?: string;
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_API_TOKEN?: string;
 }
 
 export async function handleEmail(
@@ -171,23 +172,15 @@ export async function handleEmail(
     recipients = await getAliasRecipientEmails(db, alias.id);
   }
 
-  // Fallback: if no alias-specific recipients, use user's primary address
+  // Fallback: if no alias-specific recipients, use all verified recipients for this user
   if (recipients.length === 0) {
-    const primary = await getRecipientByEmail(db, user, `${user}@${getPrimaryDomain(env.BASE_DOMAIN)}`);
-    if (primary?.verified_at) {
-      recipients = [primary.email];
-    } else {
-      // Last resort: check for any verified recipient
-      const { results } = await db
-        .prepare(
-          "SELECT email FROM recipients WHERE user = ? AND verified_at IS NOT NULL LIMIT 1",
-        )
-        .bind(user)
-        .all<{ email: string }>();
-      if (results.length > 0) {
-        recipients = [results[0].email];
-      }
-    }
+    const { results } = await db
+      .prepare(
+        "SELECT email FROM recipients WHERE user = ? AND verified_at IS NOT NULL",
+      )
+      .bind(user)
+      .all<{ email: string }>();
+    recipients = results.map((r) => r.email);
   }
 
   if (recipients.length === 0) {
@@ -286,9 +279,4 @@ export async function handleEmail(
   }
 }
 
-/** Extract parent domain from base domain: "drop.example.com" → "example.com" */
-function getPrimaryDomain(baseDomain: string): string {
-  const parts = baseDomain.split(".");
-  return parts.slice(1).join(".");
-}
 

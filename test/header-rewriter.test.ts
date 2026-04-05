@@ -35,12 +35,12 @@ describe("rewriteHeaders", () => {
   });
 
   describe("count_subject", () => {
-    it("prepends counter to subject, leaves from unchanged", () => {
+    it("prepends counter to subject and sets From to counter with noreply", () => {
       const result = rewriteHeaders(
         { ...base, format: "count_subject" },
         "Your order",
       );
-      expect(result.from).toBeNull();
+      expect(result.from).toBe('"[3/24]" <noreply@drop.example.com>');
       expect(result.subject).toBe("[3/24] Your order");
     });
   });
