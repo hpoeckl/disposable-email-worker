@@ -36,6 +36,10 @@ All from-name formats rewrite the `From` header to use `noreply@<base-domain>` a
 
 The `count_subject` format shows `"sender via tag"` in the From display name and prepends `[n/m]` to the subject line. The original sender is always available in the `Reply-To` and `X-Original-From` headers.
 
+## Rate Limiting is Per-Isolate
+
+API rate limiting uses in-memory state (120 requests/minute per user). Because Cloudflare Workers can run across multiple isolates, the effective limit may be higher than 120/min under high concurrency. This is acceptable for an authenticated API behind Cloudflare Access — the rate limit prevents accidental abuse, not adversarial attacks.
+
 ## Bandwidth Tracking
 
 Bandwidth is tracked per-user in `user_settings.bandwidth_used`. The default limit is 100 MB. A cron trigger (`0 0 1 * *`) resets all users' bandwidth on the 1st of each month at 00:00 UTC.

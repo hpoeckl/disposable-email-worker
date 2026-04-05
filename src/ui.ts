@@ -126,6 +126,12 @@ const HTML = `<!DOCTYPE html>
   .empty { color: var(--muted); font-style: italic; font-size: 0.85rem; padding: 1rem 0; }
   .actions { display: flex; gap: 0.3rem; }
 
+  /* Drag and drop */
+  .drag-handle { cursor: grab; color: var(--muted); user-select: none; font-size: 1rem; }
+  .drag-handle:active { cursor: grabbing; }
+  tr.dragging { opacity: 0.4; }
+  tr.drag-over { border-top: 2px solid var(--accent); }
+
   /* Admin bar */
   .admin-bar {
     display: none;
@@ -233,7 +239,7 @@ const HTML = `<!DOCTYPE html>
     <span id="rules-user-label" class="muted" style="display:none"></span>
   </div>
   <table class="mt">
-    <thead><tr><th>Pri</th><th>Name</th><th>Conditions</th><th>Action</th><th>Hits</th><th>Status</th><th>Actions</th></tr></thead>
+    <thead><tr><th></th><th>Pri</th><th>Name</th><th>Conditions</th><th>Action</th><th>Hits</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody id="rules-body"></tbody>
   </table>
 </div>
@@ -546,10 +552,11 @@ let rulesData = [];
 async function loadRules() {
   rulesData = await api('/rules' + userParam());
   const tb = document.getElementById('rules-body');
-  if (rulesData.length === 0) { tb.innerHTML = '<tr><td colspan="7" class="empty">No rules</td></tr>'; return; }
+  if (rulesData.length === 0) { tb.innerHTML = '<tr><td colspan="8" class="empty">No rules</td></tr>'; return; }
   tb.innerHTML = rulesData.map(r => {
     const conds = r.conditions.map(c => \`\${c.field} \${c.match} "\${esc(c.value)}"\`).join(r.operator === 'and' ? ' AND ' : ' OR ');
-    return \`<tr>
+    return \`<tr draggable="true" data-rule-id="\${r.id}">
+      <td class="drag-handle" title="Drag to reorder">&#x2630;</td>
       <td>\${r.priority}</td>
       <td>\${esc(r.name)}</td>
       <td class="mono" style="font-size:0.7rem">\${conds}</td>
@@ -562,6 +569,7 @@ async function loadRules() {
       </td>
     </tr>\`;
   }).join('');
+  initRuleDragDrop();
 }
 
 let editingRuleId = null;
@@ -653,6 +661,55 @@ async function delRule(id) {
   await api('/rules/' + id, { method: 'DELETE' });
   toast('Rule deleted');
   loadRules();
+}
+
+// --- RULE DRAG & DROP ---
+let dragSrcRow = null;
+function initRuleDragDrop() {
+  const rows = document.querySelectorAll('#rules-body tr[draggable]');
+  rows.forEach(row => {
+    row.addEventListener('dragstart', e => {
+      dragSrcRow = row;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      rows.forEach(r => r.classList.remove('drag-over'));
+      dragSrcRow = null;
+    });
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (row !== dragSrcRow) row.classList.add('drag-over');
+    });
+    row.addEventListener('dragleave', () => {
+      row.classList.remove('drag-over');
+    });
+    row.addEventListener('drop', async e => {
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      if (!dragSrcRow || row === dragSrcRow) return;
+      const tbody = row.parentNode;
+      const allRows = [...tbody.querySelectorAll('tr[draggable]')];
+      const fromIdx = allRows.indexOf(dragSrcRow);
+      const toIdx = allRows.indexOf(row);
+      if (fromIdx < toIdx) {
+        tbody.insertBefore(dragSrcRow, row.nextSibling);
+      } else {
+        tbody.insertBefore(dragSrcRow, row);
+      }
+      const newOrder = [...tbody.querySelectorAll('tr[draggable]')].map(r => +r.dataset.ruleId);
+      try {
+        await api('/rules/reorder' + userParam(), { method: 'POST', body: JSON.stringify({ rule_ids: newOrder }) });
+        toast('Rules reordered');
+        loadRules();
+      } catch (err) {
+        toast(err.message, 'error');
+        loadRules();
+      }
+    });
+  });
 }
 
 // --- RECIPIENTS ---

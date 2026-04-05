@@ -131,7 +131,7 @@ automatically via the Cloudflare API on first user login.
 - [x] Rules evaluated before whitelist and counter logic — a rule match
       short-circuits further processing.
 - [x] Rules have active/inactive toggle and execution counter.
-- [x] Manageable via API and UI (drag-and-drop reordering not yet implemented).
+- [x] Manageable via API and UI with drag-and-drop reordering.
 
 ### User Settings
 
@@ -163,7 +163,7 @@ automatically via the Cloudflare API on first user login.
 - [x] Record: alias, sender, subject (truncated), timestamp, failure reason,
       message size.
 - [x] Viewable and searchable in UI; deletable by user.
-- [ ] Retention policy: auto-purge after configurable number of days.
+- [x] Retention policy: auto-purge records older than 30 days via monthly cron trigger.
 
 ### Web UI (Management Dashboard)
 
@@ -231,6 +231,11 @@ automatically via the Cloudflare API on first user login.
 - [x] `GET    /api/settings`                   — Get user settings.
 - [x] `PATCH  /api/settings`                   — Update settings (catch-all,
       from-name format, default limit).
+
+**Operational:**
+
+- [x] `GET /api/health` — health check (no auth, checks DB connectivity).
+- [x] Rate limiting: 120 requests/minute per user, in-memory per-isolate.
 
 **Auth & Common:**
 

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `GET /api/health` endpoint — no auth required, checks DB connectivity (returns 200/503)
+- API rate limiting — 120 requests/minute per user, in-memory per-isolate sliding window
+  - `X-RateLimit-Remaining` and `X-RateLimit-Reset` headers on all authenticated responses
+  - `429 Too Many Requests` with `Retry-After` header when exceeded
+- Auto-purge of failed deliveries older than 30 days via monthly cron trigger
+- Drag-and-drop rule reordering in dashboard UI (calls `POST /api/rules/reorder`)
+
 ## [0.3.0] - 2026-04-05
 
 ### Added

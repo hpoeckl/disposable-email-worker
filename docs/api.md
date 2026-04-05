@@ -8,7 +8,35 @@ The Worker validates the `Cf-Access-Jwt-Assertion` header on every `/api/*` requ
 
 Admin users (listed in `ADMIN_USERS` env var) can act on behalf of other users by appending `?user=<target>` to any endpoint.
 
+## Rate Limiting
+
+All authenticated API requests are rate-limited to **120 requests per minute** per user (based on JWT email). Rate limit state is per-isolate (in-memory), so limits reset on Worker restarts or across different isolates.
+
+Response headers on all authenticated requests:
+- `X-RateLimit-Remaining` — requests remaining in the current window
+- `X-RateLimit-Reset` — Unix timestamp (seconds) when the window resets
+
+When the limit is exceeded, the API returns `429 Too Many Requests` with a `Retry-After` header (seconds until reset).
+
 ## Endpoints
+
+### Health Check
+
+#### `GET /api/health`
+
+No authentication required. Returns Worker and database status.
+
+```json
+{ "status": "ok", "timestamp": "2026-04-05T12:00:00.000Z" }
+```
+
+Returns `503` if the database is unreachable:
+
+```json
+{ "status": "degraded", "error": "database unreachable" }
+```
+
+---
 
 ### Identity
 
@@ -250,6 +278,7 @@ Common status codes:
 - `401` — authentication failed (invalid/missing JWT)
 - `403` — forbidden (e.g., non-admin calling admin-only endpoint)
 - `404` — resource not found (or not accessible to current user)
+- `429` — rate limit exceeded (check `Retry-After` header)
 - `409` — conflict (e.g., alias already exists)
 - `500` — internal server error
 - `501` — feature not configured (e.g., CF Email Routing API not set up)

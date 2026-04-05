@@ -1,6 +1,7 @@
 import { Env } from "./email-handler";
 import { validateAccessJwt, AuthError } from "./auth";
 import { renderDashboard } from "./ui";
+import { checkRateLimit } from "./rate-limit";
 
 export interface RequestContext {
   user: string;      // derived from JWT email localpart
@@ -59,6 +60,16 @@ export async function handleFetch(
     });
   }
 
+  // Health check — no auth required
+  if (path === "/api/health" && request.method === "GET") {
+    try {
+      await env.DB.prepare("SELECT 1").first();
+      return json({ status: "ok", timestamp: new Date().toISOString() });
+    } catch {
+      return json({ status: "degraded", error: "database unreachable" }, 503);
+    }
+  }
+
   // Authenticate
   let ctx: RequestContext;
   try {
@@ -68,6 +79,21 @@ export async function handleFetch(
       return json({ error: err.message }, 401);
     }
     throw err;
+  }
+
+  // Rate limit: 120 requests/minute per authenticated user
+  const rl = checkRateLimit(ctx.email, 120, 60_000);
+  if (!rl.allowed) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json",
+        "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+        "X-RateLimit-Remaining": "0",
+        "X-RateLimit-Reset": String(Math.ceil(rl.resetAt / 1000)),
+        ...corsHeaders(),
+      },
+    });
   }
 
   // Match route
@@ -84,10 +110,12 @@ export async function handleFetch(
 
     try {
       const response = await r.handler(ctx, request);
-      // Add CORS headers to response
+      // Add CORS and rate-limit headers to response
       for (const [k, v] of Object.entries(corsHeaders())) {
         response.headers.set(k, v);
       }
+      response.headers.set("X-RateLimit-Remaining", String(rl.remaining));
+      response.headers.set("X-RateLimit-Reset", String(Math.ceil(rl.resetAt / 1000)));
       return response;
     } catch (err) {
       console.error("Handler error:", err);

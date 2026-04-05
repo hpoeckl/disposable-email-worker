@@ -73,3 +73,16 @@ export async function purgeOldDeliveries(
     .bind(user, days)
     .run();
 }
+
+export async function purgeAllOldDeliveries(
+  db: D1Database,
+  days: number,
+): Promise<number> {
+  const result = await db
+    .prepare(
+      "DELETE FROM failed_deliveries WHERE created_at < datetime('now', '-' || ? || ' days')",
+    )
+    .bind(days)
+    .run();
+  return result.meta.changes ?? 0;
+}
