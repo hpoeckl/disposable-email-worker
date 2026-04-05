@@ -25,6 +25,9 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Generate wrangler.toml for tests
+        run: cp wrangler.toml.example wrangler.toml
+
       - name: Integration tests
         run: npm run test:integration
 
