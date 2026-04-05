@@ -11,6 +11,11 @@ export default defineConfig({
       },
       miniflare: {
         d1Databases: ["DB"],
+        bindings: {
+          CF_ACCESS_TEAM: "test-team",
+          CF_ACCESS_AUD: "test-aud",
+          BASE_DOMAIN: "drop.test.example.com",
+        },
       },
     }),
   },
