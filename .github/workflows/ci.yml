@@ -32,7 +32,7 @@ jobs:
         run: npm run test:integration
 
   # Required GitHub repository secrets for deploy:
-  #   CLOUDFLARE_DEPLOY_TOKEN  — API token with Workers Scripts:Edit, D1:Edit, Workers Routes:Edit
+  #   CLOUDFLARE_DEPLOY_TOKEN  — API token with Workers Scripts:Edit, D1:Edit, Workers Routes:Edit, User Memberships:Read
   #   D1_DATABASE_ID           — D1 database ID (from `pulumi stack output databaseId`)
   #   BASE_DOMAIN              — e.g. "drop.example.com"
   #   ADMIN_USERS              — comma-separated admin emails
