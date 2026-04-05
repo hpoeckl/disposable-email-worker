@@ -81,3 +81,12 @@ export async function resetBandwidth(
     .bind(user)
     .run();
 }
+
+export async function resetAllBandwidth(db: D1Database): Promise<number> {
+  const result = await db
+    .prepare(
+      "UPDATE user_settings SET bandwidth_used = 0, bandwidth_reset_at = datetime('now') WHERE bandwidth_used > 0",
+    )
+    .run();
+  return result.meta.changes ?? 0;
+}

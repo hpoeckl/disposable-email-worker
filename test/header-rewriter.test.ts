@@ -40,7 +40,9 @@ describe("rewriteHeaders", () => {
         { ...base, format: "count_subject" },
         "Your order",
       );
-      expect(result.from).toBe('"[3/24]" <noreply@drop.example.com>');
+      expect(result.from).toBe(
+        '"shop@amazon.com via amazon" <noreply@drop.example.com>',
+      );
       expect(result.subject).toBe("[3/24] Your order");
     });
   });

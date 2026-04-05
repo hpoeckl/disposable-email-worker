@@ -9,15 +9,18 @@
     "migrate": "wrangler d1 migrations apply disposable-email-db",
     "migrate:local": "wrangler d1 migrations apply disposable-email-db --local",
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
+    "test:all": "vitest run && vitest run --config vitest.integration.config.mts",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
     "infra:preview": "pulumi -C infra preview",
     "infra:up": "pulumi -C infra up"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.14.1",
     "@cloudflare/workers-types": "^4.20250327.0",
     "typescript": "^5.8.0",
-    "vitest": "^3.1.0",
+    "vitest": "^4.1.2",
     "wrangler": "^4.10.0"
   }
 }

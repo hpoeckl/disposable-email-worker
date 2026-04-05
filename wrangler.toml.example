@@ -22,6 +22,10 @@ name = "SEB"
 # Email routing — Worker receives inbound email via exported `email` handler
 # Catch-all configured via Pulumi after first deploy
 
+# Cron trigger — monthly bandwidth reset (1st of each month, 00:00 UTC)
+[triggers]
+crons = ["0 0 1 * *"]
+
 # Environment variables (non-secret)
 [vars]
 BASE_DOMAIN = ""            # Your base domain, e.g. "drop.example.com"

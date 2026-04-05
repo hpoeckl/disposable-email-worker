@@ -28,7 +28,8 @@ Aliases auto-expire after a configurable number of messages (default: 24). After
 - Mobile-friendly web dashboard
 - Multi-user via Cloudflare Access (email OTP, no passwords)
 - Admin role for cross-user management
-- Infrastructure as Code with Pulumi (YAML)
+- Monthly bandwidth reset via cron trigger
+- Infrastructure as Code with Pulumi (TypeScript)
 
 ## Architecture
 
@@ -135,22 +136,25 @@ wrangler deploy
 ## Development
 
 ```bash
-npm run dev          # Local dev server (wrangler dev)
-npm test             # Run tests
-npm run lint         # Type check
-npm run migrate:local # Apply migrations to local D1
+npm run dev              # Local dev server (wrangler dev)
+npm test                 # Run unit tests
+npm run test:integration # Run integration tests (D1 + API, uses Workers runtime)
+npm run test:all         # Run both unit and integration tests
+npm run lint             # Type check
+npm run migrate:local    # Apply migrations to local D1
 ```
 
 ## Project Structure
 
 ```
-├── infra/              Pulumi IaC (YAML)
+├── infra/              Pulumi IaC (TypeScript)
 ├── migrations/         D1 SQL migrations
 ├── src/                Worker source code
 │   ├── api/            REST API route handlers
 │   ├── db/             D1 data access layer
 │   └── ui.ts           Dashboard SPA (served from Worker)
-├── test/               Tests
+├── test/               Unit tests
+│   └── integration/    Integration tests (Workers runtime + D1)
 └── docs/               Technical documentation
 ```
 

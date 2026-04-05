@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Monthly bandwidth reset via cron trigger (`0 0 1 * *` — 1st of each month, 00:00 UTC)
+- `scheduled()` handler and `resetAllBandwidth()` function
+- Recipient `active` flag — toggle default forwarding per recipient (`PATCH /api/recipients/:id`)
+- Rule `forward_to` as multi-select of verified recipients (comma-separated)
+- Integration tests using `@cloudflare/vitest-pool-workers` with real D1 (37 tests)
+- `npm run test:integration` and `npm run test:all` scripts
 - REST API with route dispatcher and param extraction (`src/router.ts`)
 - Cloudflare Access JWT validation middleware (RS256, JWKS cache, no external deps)
 - `GET /api/me` endpoint returns current user info and admin status
@@ -44,8 +50,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - All POST create endpoints (aliases, rules, recipients) now use `?user=` query
   param instead of `body.user` for admin targeting — consistent with other endpoints
 - Whitelist API endpoints now use `effectiveUser()` for admin scoping
-- `count_subject` from format now rewrites From header to `"[n/m]" <noreply@...>`
-  (previously left original From, causing envelope mismatch rejections)
+- `count_subject` from format now shows `"sender via tag"` in From display name
+  and puts counter only in subject (previously used `"[n/m]"` as From display name)
+- Dropped `alias_recipients` table — recipient routing handled via rules with `forward_to`
+- Vitest upgraded from v3 to v4 for `@cloudflare/vitest-pool-workers` compatibility
 - Recipient delete now returns the deleted record (needed for CF destination cleanup)
 
 ### Fixed

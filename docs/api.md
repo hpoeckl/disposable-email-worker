@@ -106,7 +106,7 @@ Create a rule. Body:
 
 - `operator`: `and` | `or`
 - `action`: `block` (silent drop) | `reject` (bounce) | `forward` (override recipients)
-- `forward_to`: required when action is `forward`
+- `forward_to`: comma-separated list of verified recipient emails; required when action is `forward`
 - Condition fields: `sender`, `sender_domain`, `subject`, `alias_tag`
 - Condition matches: `equals`, `contains`, `starts_with`, `ends_with`, `regex`
 
@@ -155,6 +155,16 @@ Sync verification status from Cloudflare Email Routing API. Checks all destinati
 ```json
 { "ok": true, "synced": 2 }
 ```
+
+#### `PATCH /api/recipients/:id`
+
+Toggle the recipient's default forwarding flag. Body:
+
+```json
+{ "active": false }
+```
+
+Recipients with `active: true` receive all forwarded mail by default. Inactive recipients are still usable as explicit targets in rule `forward_to` but won't receive mail unless a rule routes to them.
 
 #### `DELETE /api/recipients/:id`
 
@@ -214,7 +224,7 @@ Valid `from_name_format` values:
 |---|---|---|
 | `sender_count_alias` | `"sender [n/m] via tag" <noreply@...>` | unchanged |
 | `sender_via_alias` | `"sender via tag" <noreply@...>` | unchanged |
-| `count_subject` | `"[n/m]" <noreply@...>` | `[n/m] original subject` |
+| `count_subject` | `"sender via tag" <noreply@...>` | `[n/m] original subject` |
 | `alias_only` | `"tag" <noreply@...>` | unchanged |
 | `noreply` | `<noreply@...>` | unchanged |
 

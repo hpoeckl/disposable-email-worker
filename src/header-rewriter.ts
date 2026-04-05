@@ -44,7 +44,7 @@ export function rewriteHeaders(
 
     case "count_subject":
       return {
-        from: `"${counter}" <${noReplyAddress}>`,
+        from: `"${esc(sender)} via ${esc(tag)}" <${noReplyAddress}>`,
         subject: `${counter} ${originalSubject}`,
       };
 

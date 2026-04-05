@@ -34,14 +34,14 @@ Without the API token configured, destination addresses must be managed manually
 
 All from-name formats rewrite the `From` header to use `noreply@<base-domain>` as the sender address. This is required because the envelope sender (set by Cloudflare SRS) uses the parent domain, and the `From` header must match to pass DMARC alignment.
 
-The `count_subject` format also prepends `[n/m]` to the subject line. The original sender is always available in the `Reply-To` and `X-Original-From` headers.
+The `count_subject` format shows `"sender via tag"` in the From display name and prepends `[n/m]` to the subject line. The original sender is always available in the `Reply-To` and `X-Original-From` headers.
 
 ## Bandwidth Tracking
 
-Bandwidth is tracked per-user in `user_settings.bandwidth_used`. The default limit is 100 MB. There is currently no automatic monthly reset — `bandwidth_reset_at` is stored but not enforced by a scheduled task.
+Bandwidth is tracked per-user in `user_settings.bandwidth_used`. The default limit is 100 MB. A cron trigger (`0 0 1 * *`) resets all users' bandwidth on the 1st of each month at 00:00 UTC.
 
 ## No Per-Alias Recipient Routing
 
-All verified recipients for a user receive all forwarded mail. To route specific
-aliases to specific recipients, use the rule engine with a `forward` action and
-an `alias_tag equals <tag>` condition.
+All verified **active** recipients for a user receive all forwarded mail. Recipients can be toggled inactive via `PATCH /api/recipients/:id` — inactive recipients are still verified CF destinations but won't receive mail unless explicitly targeted by a rule.
+
+To route specific aliases to specific recipients, use the rule engine with a `forward` action, an `alias_tag equals <tag>` condition, and a comma-separated list of target emails in `forward_to`.
