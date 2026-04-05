@@ -212,6 +212,7 @@ const HTML = `<!DOCTYPE html>
   <button class="tab" data-tab="recipients">Recipients</button>
   <button class="tab" data-tab="deliveries">Failed Deliveries</button>
   <button class="tab" data-tab="settings">Settings</button>
+  <button class="tab" data-tab="users" id="users-tab" style="display:none">Users</button>
 </div>
 
 <!-- ALIASES -->
@@ -286,6 +287,18 @@ const HTML = `<!DOCTYPE html>
   <div class="form-row"><label>Default limit</label><input id="set-limit" type="number" style="width:80px"></div>
   <div class="form-row"><label>Bandwidth</label><span id="set-bandwidth" class="mono"></span></div>
   <button class="btn-accent" onclick="saveSettings()">Save</button>
+</div>
+
+<!-- USERS (admin only) -->
+<div id="users" class="panel">
+  <div class="form-row">
+    <input id="new-user" placeholder="username" style="width:200px">
+    <button class="btn-accent" onclick="createUser()">Add User</button>
+  </div>
+  <table>
+    <thead><tr><th>User</th><th>Aliases</th><th>Recipients</th><th>Rules</th><th>Bandwidth</th><th>First Alias</th><th>Actions</th></tr></thead>
+    <tbody id="users-body"></tbody>
+  </table>
 </div>
 
 <!-- WHITELIST MODAL -->
@@ -376,6 +389,7 @@ async function initAdmin() {
       document.getElementById('admin-bar').classList.add('visible');
       document.getElementById('new-alias-user').style.display = '';
       document.getElementById('del-user-th').style.display = '';
+      document.getElementById('users-tab').style.display = '';
       // Populate user list from aliases
       const aliases = await api('/aliases');
       const users = [...new Set(aliases.map(a => a.user))].sort();
@@ -826,6 +840,68 @@ async function saveSettings() {
   loadSettings();
 }
 
+// --- USERS (admin) ---
+async function loadUsers() {
+  if (!isAdmin) return;
+  const users = await api('/users');
+  const tb = document.getElementById('users-body');
+  if (users.length === 0) { tb.innerHTML = '<tr><td colspan="7" class="empty">No users</td></tr>'; return; }
+  tb.innerHTML = users.map(u => {
+    const bw = (u.bandwidth_used / 1048576).toFixed(1) + ' / ' + (u.bandwidth_limit / 1048576).toFixed(0) + ' MB';
+    return \`<tr>
+      <td class="mono">\${esc(u.user)}</td>
+      <td>\${u.alias_count}</td>
+      <td>\${u.recipient_count}</td>
+      <td>\${u.rule_count}</td>
+      <td class="muted" style="font-size:0.75rem">\${bw}</td>
+      <td class="muted" style="font-size:0.75rem">\${fmtDate(u.created_at)}</td>
+      <td class="actions">
+        <button class="btn-sm" onclick="viewUser('\${esc(u.user)}')">View</button>
+        <button class="btn-sm btn-danger" onclick="delUser('\${esc(u.user)}')">Del</button>
+      </td>
+    </tr>\`;
+  }).join('');
+}
+
+async function createUser() {
+  const user = document.getElementById('new-user').value.trim().toLowerCase();
+  if (!user) return;
+  await api('/users', { method: 'POST', body: JSON.stringify({ user }) });
+  document.getElementById('new-user').value = '';
+  toast('User created');
+  loadUsers();
+  refreshAdminUserList();
+}
+
+function viewUser(user) {
+  document.getElementById('admin-user-select').value = user;
+  onAdminUserChange();
+  document.querySelector('[data-tab="aliases"]').click();
+}
+
+async function delUser(user) {
+  if (!confirm('Delete user ' + user + ' and ALL their data (aliases, rules, recipients, settings)?')) return;
+  await api('/users/' + user, { method: 'DELETE' });
+  toast('User deleted');
+  loadUsers();
+  refreshAdminUserList();
+}
+
+async function refreshAdminUserList() {
+  const aliases = await api('/aliases');
+  const users = [...new Set(aliases.map(a => a.user))].sort();
+  const sel = document.getElementById('admin-user-select');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All users</option>';
+  users.forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u;
+    opt.textContent = u;
+    sel.appendChild(opt);
+  });
+  sel.value = current;
+}
+
 // Util
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function fmtDate(s) { if (!s) return '—'; return new Date(s + 'Z').toLocaleString(); }
@@ -836,6 +912,7 @@ function loadAll() {
   loadRecipients();
   loadDeliveries();
   loadSettings();
+  loadUsers();
 }
 
 // Init

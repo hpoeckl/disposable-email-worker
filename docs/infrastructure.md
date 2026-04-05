@@ -41,7 +41,7 @@ Required config values (set via `pulumi config set`):
 | `zoneId` | Cloudflare zone ID | `abc123...` |
 | `accountId` | Cloudflare account ID | `def456...` |
 | `baseDomain` | Base domain for email routing | `drop.example.com` |
-| `accessAllowedEmail` | Email address allowed via Access OTP | `alice@example.com` |
+| `accessAllowedEmails` | Comma-separated emails allowed via Access OTP | `alice@example.com,bob@example.com` |
 | `cloudflare:apiToken` | Cloudflare API token (**secret**) | — |
 
 Optional:
