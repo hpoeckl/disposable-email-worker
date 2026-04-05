@@ -99,6 +99,9 @@ wrangler secret put CLOUDFLARE_API_TOKEN
 
 `ADMIN_USERS` and `CLOUDFLARE_ACCOUNT_ID` are set in `wrangler.toml` `[vars]` (not secrets).
 
+Optional vars:
+- `SECURITY_CONTACT` — if set, serves `/.well-known/security.txt` with this value as the `Contact` field (e.g., `mailto:security@example.com` or a URL)
+
 ## Step 8: Configure Parent Zone DNS (SPF/DKIM/DMARC)
 
 Cloudflare's SendEmail uses SRS and DKIM signing on the parent domain.

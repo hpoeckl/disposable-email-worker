@@ -56,6 +56,17 @@ export async function handleFetch(
     });
   }
 
+  // security.txt
+  if (path === "/.well-known/security.txt") {
+    if (!env.SECURITY_CONTACT) {
+      return new Response("Not found", { status: 404 });
+    }
+    const body = `Contact: ${env.SECURITY_CONTACT}\nExpires: ${new Date(Date.now() + 365 * 86400000).toISOString()}\n`;
+    return new Response(body, {
+      headers: { "Content-Type": "text/plain" },
+    });
+  }
+
   // Serve UI for non-API routes
   if (!path.startsWith("/api/")) {
     return renderDashboard();
