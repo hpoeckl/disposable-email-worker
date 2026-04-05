@@ -411,9 +411,9 @@ async function initAdmin() {
       document.getElementById('new-alias-user').style.display = '';
       document.getElementById('del-user-th').style.display = '';
       document.getElementById('users-tab').style.display = '';
-      // Populate user list from aliases
-      const aliases = await api('/aliases');
-      const users = [...new Set(aliases.map(a => a.user))].sort();
+      // Populate user list from aliases + users table
+      const [aliases, allUsers] = await Promise.all([api('/aliases'), api('/users').catch(() => [])]);
+      const users = [...new Set([...aliases.map(a => a.user), ...allUsers.map(u => u.user)])].sort();
       const sel = document.getElementById('admin-user-select');
       users.forEach(u => {
         const opt = document.createElement('option');
@@ -909,8 +909,8 @@ async function delUser(user) {
 }
 
 async function refreshAdminUserList() {
-  const aliases = await api('/aliases');
-  const users = [...new Set(aliases.map(a => a.user))].sort();
+  const [aliases, allUsers] = await Promise.all([api('/aliases'), api('/users').catch(() => [])]);
+  const users = [...new Set([...aliases.map(a => a.user), ...allUsers.map(u => u.user)])].sort();
   const sel = document.getElementById('admin-user-select');
   const current = sel.value;
   sel.innerHTML = '<option value="">All users</option>';
