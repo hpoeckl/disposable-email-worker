@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Inline SVG favicon (envelope icon)
+- Security headers: CSP, X-Frame-Options DENY, X-Content-Type-Options nosniff
+- `Cache-Control: no-cache` on dashboard HTML
+- `robots.txt` disallow-all at `/robots.txt`
+- `<meta name="theme-color">` for mobile browser chrome
+- Optional `/.well-known/security.txt` via `SECURITY_CONTACT` env var
+- Auto-save settings on change (removed Save button)
+- Background tint when admin impersonates another user
+- Admin tabs grayed out based on context (per-user vs all-users view)
+
+### Fixed
+
+- Admin selecting own user in dropdown now correctly filters aliases and deliveries
+- "Acting as" labels use warn color for visibility, hidden in all-users mode
+- Admin alias "user" input hidden when a specific user is selected
+
 ## [0.5.0] - 2026-04-05
 
 ### Added

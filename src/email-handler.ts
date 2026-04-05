@@ -25,6 +25,7 @@ export interface Env {
   CF_ACCESS_AUD?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
   CLOUDFLARE_API_TOKEN?: string;
+  SECURITY_CONTACT?: string;
 }
 
 export async function handleEmail(

@@ -49,6 +49,24 @@ export async function handleFetch(
   const url = new URL(request.url);
   const path = url.pathname;
 
+  // robots.txt — disallow all
+  if (path === "/robots.txt") {
+    return new Response("User-agent: *\nDisallow: /\n", {
+      headers: { "Content-Type": "text/plain" },
+    });
+  }
+
+  // security.txt
+  if (path === "/.well-known/security.txt") {
+    if (!env.SECURITY_CONTACT) {
+      return new Response("Not found", { status: 404 });
+    }
+    const body = `Contact: ${env.SECURITY_CONTACT}\nExpires: ${new Date(Date.now() + 365 * 86400000).toISOString()}\n`;
+    return new Response(body, {
+      headers: { "Content-Type": "text/plain" },
+    });
+  }
+
   // Serve UI for non-API routes
   if (!path.startsWith("/api/")) {
     return renderDashboard();
@@ -189,6 +207,15 @@ export function effectiveUser(ctx: RequestContext, request: Request): string {
     if (targetUser) return targetUser;
   }
   return ctx.user;
+}
+
+/**
+ * Returns true when admin is viewing without a specific ?user= target (i.e. "All users" mode).
+ */
+export function isAdminAllUsers(ctx: RequestContext, request: Request): boolean {
+  if (!ctx.isAdmin) return false;
+  const url = new URL(request.url);
+  return !url.searchParams.has("user");
 }
 
 // Built-in route: current user info

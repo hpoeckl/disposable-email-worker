@@ -1,6 +1,12 @@
 export function renderDashboard(): Response {
   return new Response(HTML, {
-    headers: { "Content-Type": "text/html; charset=utf-8" },
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-cache",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "Content-Security-Policy": "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'",
+    },
   });
 }
 
@@ -10,6 +16,8 @@ const HTML = `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Disposable Email Gateway</title>
+<meta name="theme-color" content="#0f1117">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='5' y='25' width='90' height='55' rx='4' fill='none' stroke='%236c8aff' stroke-width='6'/><polyline points='5,25 50,58 95,25' fill='none' stroke='%236c8aff' stroke-width='6'/></svg>">
 <style>
   :root {
     --bg: #0f1117;
@@ -57,6 +65,7 @@ const HTML = `<!DOCTYPE html>
   }
   .tab:hover { color: var(--text); }
   .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab.disabled { opacity: 0.3; pointer-events: none; cursor: default; }
   .panel { display: none; }
   .panel.active { display: block; }
 
@@ -297,17 +306,17 @@ const HTML = `<!DOCTYPE html>
 <!-- SETTINGS -->
 <div id="settings" class="panel">
   <div id="settings-user-label" class="muted" style="display:none;margin-bottom:0.5rem"></div>
-  <div class="form-row"><label>Catch-all</label><select id="set-catchall"><option value="1">Enabled</option><option value="0">Disabled</option></select></div>
-  <div class="form-row"><label>From format</label><select id="set-format">
+  <div class="form-row"><label>Catch-all</label><select id="set-catchall" onchange="saveSettings()"><option value="1">Enabled</option><option value="0">Disabled</option></select></div>
+  <div class="form-row"><label>From format</label><select id="set-format" onchange="saveSettings()">
     <option value="sender_count_alias">sender [n/m] via tag</option>
     <option value="sender_via_alias">sender via tag</option>
     <option value="count_subject">[n/m] subject</option>
     <option value="alias_only">tag only</option>
     <option value="noreply">noreply</option>
   </select></div>
-  <div class="form-row"><label>Default limit</label><input id="set-limit" type="number" style="width:80px"></div>
+  <div class="form-row"><label>Default limit</label><input id="set-limit" type="number" style="width:80px" onchange="saveSettings()"></div>
   <div class="form-row"><label>Bandwidth</label><span id="set-bandwidth" class="mono"></span></div>
-  <button class="btn-accent" onclick="saveSettings()">Save</button>
+
 </div>
 
 <!-- USERS (admin only) -->
@@ -429,8 +438,31 @@ async function initAdmin() {
 
 function onAdminUserChange() {
   adminTargetUser = document.getElementById('admin-user-select').value;
+  document.body.style.background = (adminTargetUser && adminTargetUser !== currentUser) ? '#14130f' : '';
+  updateAdminTabs();
   updateUserLabels();
   loadAll();
+}
+
+function updateAdminTabs() {
+  if (!isAdmin) return;
+  const allUsers = !adminTargetUser;
+  const perUserTabs = ['rules', 'recipients', 'settings'];
+  const allUsersTabs = ['users'];
+  perUserTabs.forEach(t => {
+    document.querySelector('[data-tab="' + t + '"]').classList.toggle('disabled', allUsers);
+  });
+  allUsersTabs.forEach(t => {
+    const el = document.querySelector('[data-tab="' + t + '"]');
+    if (el) el.classList.toggle('disabled', !allUsers);
+  });
+  // Hide admin-only alias user input when a specific user is selected
+  document.getElementById('new-alias-user').style.display = adminTargetUser ? 'none' : '';
+  // Switch to aliases if current tab is disabled
+  const activeTab = document.querySelector('.tab.active');
+  if (activeTab && activeTab.classList.contains('disabled')) {
+    document.querySelector('[data-tab="aliases"]').click();
+  }
 }
 
 function updateUserLabels() {
@@ -438,9 +470,10 @@ function updateUserLabels() {
   const labels = ['rules-user-label', 'recipients-user-label', 'settings-user-label'];
   labels.forEach(id => {
     const el = document.getElementById(id);
-    if (isAdmin) {
+    if (isAdmin && adminTargetUser) {
       el.style.display = '';
       el.textContent = 'Acting as: ' + target;
+      el.style.color = 'var(--warn)';
     } else {
       el.style.display = 'none';
     }
@@ -954,7 +987,7 @@ function loadAll() {
 }
 
 // Init
-initAdmin().then(() => { updateUserLabels(); loadAll(); });
+initAdmin().then(() => { updateAdminTabs(); updateUserLabels(); loadAll(); });
 </script>
 </body>
 </html>`;
