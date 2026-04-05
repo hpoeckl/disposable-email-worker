@@ -1,4 +1,4 @@
-import { route, json, effectiveUser } from "../router";
+import { route, json, effectiveUser, isAdminAllUsers } from "../router";
 import {
   listFailedDeliveries,
   listAllFailedDeliveries,
@@ -7,10 +7,10 @@ import {
 } from "../db/failed-deliveries";
 
 route("GET", "/api/failed-deliveries", async (ctx, request) => {
-  const user = effectiveUser(ctx, request);
-  if (ctx.isAdmin && user === ctx.user) {
+  if (isAdminAllUsers(ctx, request)) {
     return json(await listAllFailedDeliveries(ctx.db));
   }
+  const user = effectiveUser(ctx, request);
   return json(await listFailedDeliveries(ctx.db, user));
 });
 

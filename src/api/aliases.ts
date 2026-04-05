@@ -1,4 +1,4 @@
-import { route, json, effectiveUser, RequestContext } from "../router";
+import { route, json, effectiveUser, isAdminAllUsers, RequestContext } from "../router";
 import {
   listAliases,
   listAllAliases,
@@ -10,11 +10,10 @@ import {
 } from "../db/aliases";
 
 route("GET", "/api/aliases", async (ctx, request) => {
-  const user = effectiveUser(ctx, request);
-  // Admin without ?user= sees all; with ?user= sees that user's aliases
-  if (ctx.isAdmin && user === ctx.user) {
+  if (isAdminAllUsers(ctx, request)) {
     return json(await listAllAliases(ctx.db));
   }
+  const user = effectiveUser(ctx, request);
   return json(await listAliases(ctx.db, user));
 });
 

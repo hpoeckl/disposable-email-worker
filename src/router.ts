@@ -191,6 +191,15 @@ export function effectiveUser(ctx: RequestContext, request: Request): string {
   return ctx.user;
 }
 
+/**
+ * Returns true when admin is viewing without a specific ?user= target (i.e. "All users" mode).
+ */
+export function isAdminAllUsers(ctx: RequestContext, request: Request): boolean {
+  if (!ctx.isAdmin) return false;
+  const url = new URL(request.url);
+  return !url.searchParams.has("user");
+}
+
 // Built-in route: current user info
 route("GET", "/api/me", async (ctx) => {
   return json({ user: ctx.user, email: ctx.email, isAdmin: ctx.isAdmin });
