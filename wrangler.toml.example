@@ -33,7 +33,7 @@ ADMIN_USERS = ""            # Comma-separated full email addresses of admins
 CF_ACCESS_TEAM = ""         # Cloudflare Access team name (just the subdomain, e.g. "myteam")
 CF_ACCESS_AUD = ""          # Access application audience tag (from Access > Applications > your app > Overview)
 CLOUDFLARE_ACCOUNT_ID = ""  # Account ID (visible in dashboard URL or wrangler whoami output)
-# SECURITY_CONTACT = ""    # Optional: email or URL for /.well-known/security.txt (e.g. "mailto:security@example.com")
+# SECURITY_CONTACT = ""     # Optional: email or URL for /.well-known/security.txt (e.g. "mailto:security@example.com")
 
 # Secrets (set via `wrangler secret put`):
 # - CLOUDFLARE_API_TOKEN — required for auto-creating/deleting Email Routing

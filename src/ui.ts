@@ -437,6 +437,7 @@ async function initAdmin() {
 
 function onAdminUserChange() {
   adminTargetUser = document.getElementById('admin-user-select').value;
+  document.body.style.background = (adminTargetUser && adminTargetUser !== currentUser) ? '#14130f' : '';
   updateUserLabels();
   loadAll();
 }
