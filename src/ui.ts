@@ -65,6 +65,7 @@ const HTML = `<!DOCTYPE html>
   }
   .tab:hover { color: var(--text); }
   .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab.disabled { opacity: 0.3; pointer-events: none; cursor: default; }
   .panel { display: none; }
   .panel.active { display: block; }
 
@@ -438,8 +439,30 @@ async function initAdmin() {
 function onAdminUserChange() {
   adminTargetUser = document.getElementById('admin-user-select').value;
   document.body.style.background = (adminTargetUser && adminTargetUser !== currentUser) ? '#14130f' : '';
+  updateAdminTabs();
   updateUserLabels();
   loadAll();
+}
+
+function updateAdminTabs() {
+  if (!isAdmin) return;
+  const allUsers = !adminTargetUser;
+  const perUserTabs = ['rules', 'recipients', 'settings'];
+  const allUsersTabs = ['users'];
+  perUserTabs.forEach(t => {
+    document.querySelector('[data-tab="' + t + '"]').classList.toggle('disabled', allUsers);
+  });
+  allUsersTabs.forEach(t => {
+    const el = document.querySelector('[data-tab="' + t + '"]');
+    if (el) el.classList.toggle('disabled', !allUsers);
+  });
+  // Hide admin-only alias user input when a specific user is selected
+  document.getElementById('new-alias-user').style.display = adminTargetUser ? 'none' : '';
+  // Switch to aliases if current tab is disabled
+  const activeTab = document.querySelector('.tab.active');
+  if (activeTab && activeTab.classList.contains('disabled')) {
+    document.querySelector('[data-tab="aliases"]').click();
+  }
 }
 
 function updateUserLabels() {
@@ -963,7 +986,7 @@ function loadAll() {
 }
 
 // Init
-initAdmin().then(() => { updateUserLabels(); loadAll(); });
+initAdmin().then(() => { updateAdminTabs(); updateUserLabels(); loadAll(); });
 </script>
 </body>
 </html>`;
