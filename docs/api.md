@@ -17,7 +17,7 @@ Admin users (listed in `ADMIN_USERS` env var) can act on behalf of other users b
 Returns the authenticated user's identity and admin status.
 
 ```json
-{ "user": "hpoeckl", "email": "hpoeckl@example.com", "isAdmin": false }
+{ "user": "alice", "email": "alice@example.com", "isAdmin": false }
 ```
 
 ---
@@ -36,7 +36,7 @@ Create an alias. Body:
 { "tag": "amazon", "limit": 24, "description": "Amazon orders" }
 ```
 
-Admin can target a user with `?user=hpoeckl`.
+Admin can target a user with `?user=alice`.
 
 #### `GET /api/aliases/:tag`
 
@@ -196,7 +196,7 @@ Get user settings. Auto-creates defaults on first access.
 
 ```json
 {
-  "user": "hpoeckl",
+  "user": "alice",
   "catch_all": 1,
   "from_name_format": "sender_count_alias",
   "default_limit": 24,

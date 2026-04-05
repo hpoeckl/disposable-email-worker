@@ -144,8 +144,8 @@ automatically via the Cloudflare API on first user login.
     (default — shows sender, counter, and alias tag)
   - `sender_via_alias`: `"sender@ext.com via amazon" <noreply@...>`
     (no counter)
-  - `count_subject`: From unchanged, subject rewritten to
-    `[3/24] Original Subject` (counter in subject line instead)
+  - `count_subject`: From shows `"sender via tag" <noreply@...>`, subject
+    rewritten to `[3/24] Original Subject` (counter in subject line)
   - `alias_only`: `"amazon" <noreply@...>`
   - `noreply`: `<noreply@...>` (no display name)
 - [ ] Default forwarding limit for new auto-provisioned aliases (default: 24).
@@ -265,7 +265,6 @@ automatically via the Cloudflare API on first user login.
                          │                               │
                          │  D1 Database                  │
                          │    ├─ aliases                  │
-                         │    ├─ alias_recipients         │
                          │    ├─ recipients               │
                          │    ├─ whitelist_entries        │
                          │    ├─ rules                    │
@@ -297,11 +296,13 @@ CREATE TABLE user_settings (
 
 -- Verified forwarding destinations
 CREATE TABLE recipients (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  user        TEXT    NOT NULL,
-  email       TEXT    NOT NULL,
-  verified_at TEXT,
-  created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  user              TEXT    NOT NULL,
+  email             TEXT    NOT NULL,
+  verified_at       TEXT,
+  cf_destination_id TEXT,
+  active            INTEGER NOT NULL DEFAULT 1,
+  created_at        TEXT    NOT NULL DEFAULT (datetime('now')),
   UNIQUE(user, email)
 );
 
@@ -326,13 +327,6 @@ CREATE TABLE aliases (
 
 CREATE INDEX idx_aliases_user ON aliases(user);
 
--- Many-to-many: alias → recipients
-CREATE TABLE alias_recipients (
-  alias_id     INTEGER NOT NULL REFERENCES aliases(id) ON DELETE CASCADE,
-  recipient_id INTEGER NOT NULL REFERENCES recipients(id) ON DELETE CASCADE,
-  PRIMARY KEY (alias_id, recipient_id)
-);
-
 -- Per-alias sender whitelist
 CREATE TABLE whitelist_entries (
   id       INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -353,7 +347,7 @@ CREATE TABLE rules (
   operator   TEXT    NOT NULL DEFAULT 'and' CHECK(operator IN ('and', 'or')),
   action     TEXT    NOT NULL DEFAULT 'block'
              CHECK(action IN ('forward', 'block', 'reject')),
-  forward_to TEXT,  -- recipient email override (NULL = default recipients)
+  forward_to TEXT,  -- comma-separated recipient emails (NULL = default active recipients)
   active     INTEGER NOT NULL DEFAULT 1,
   hit_count  INTEGER NOT NULL DEFAULT 0,
   created_at TEXT    NOT NULL DEFAULT (datetime('now')),
@@ -394,7 +388,7 @@ CREATE INDEX idx_failed_user ON failed_deliveries(user, created_at);
 
 ## Infrastructure as Code (Pulumi)
 
-All Cloudflare infrastructure is managed via Pulumi with YAML — declarative,
+All Cloudflare infrastructure is managed via Pulumi with TypeScript — declarative,
 no build step, no additional dependencies beyond the Pulumi CLI. State stored
 in Pulumi Cloud (free tier) or a self-managed backend.
 
@@ -463,55 +457,31 @@ Tags follow `v0.1.0` format. Changelog maintained in `CHANGELOG.md`
 ├── LICENSE
 ├── package.json               # Root: scripts, version (semver)
 ├── tsconfig.json              # Shared TypeScript config
-├── wrangler.toml              # Cloudflare Worker config (no secrets)
+├── wrangler.toml.example      # Cloudflare Worker config template (wrangler.toml gitignored)
 ├── .gitignore
-├── infra/                     # Pulumi IaC (YAML)
-│   └── Pulumi.yaml            # Project definition + all resources
+├── infra/                     # Pulumi IaC (TypeScript)
+│   └── Pulumi.yaml            # Project definition
 ├── migrations/
 │   └── 0001_initial.sql       # D1 schema (full)
 ├── src/
 │   ├── index.ts               # Worker entry (email + fetch handlers)
 │   ├── email-handler.ts       # Inbound email processing logic
 │   ├── header-rewriter.ts     # From header rewriting logic
-│   ├── api/
-│   │   ├── router.ts          # API route dispatcher
-│   │   ├── aliases.ts         # Alias CRUD handlers
-│   │   ├── whitelist.ts       # Whitelist CRUD handlers
-│   │   ├── recipients.ts      # Recipient CRUD + verification
-│   │   ├── rules.ts           # Rule CRUD + reorder
-│   │   ├── failed-deliveries.ts
-│   │   └── settings.ts        # User settings handlers
-│   ├── db/
-│   │   ├── aliases.ts         # D1 access layer for aliases
-│   │   ├── recipients.ts      # D1 access layer for recipients
-│   │   ├── whitelist.ts       # D1 access layer for whitelists
-│   │   ├── rules.ts           # D1 access layer for rules
-│   │   ├── failed-deliveries.ts
-│   │   └── settings.ts        # D1 access layer for user settings
+│   ├── api/                   # REST API route handlers
+│   ├── db/                    # D1 data access layer
 │   ├── auth.ts                # CF Access JWT validation + admin check
-│   ├── address-parser.ts      # Recipient address parsing (tag + user)
-│   ├── dns-provisioner.ts     # Cloudflare API: per-user subdomain setup
+│   ├── router.ts              # API route dispatcher
+│   ├── ui.ts                  # Dashboard SPA (served from Worker)
+│   ├── cf-email-routing.ts    # CF Email Routing destination API client
 │   ├── rule-engine.ts         # Rule condition evaluation
 │   └── whitelist-matcher.ts   # Sender matching (email, domain, segment)
-├── ui/
-│   ├── index.html             # SPA shell
-│   ├── app.js                 # UI logic (vanilla JS or lightweight framework)
-│   └── style.css              # Mobile-first responsive styles
-├── test/
-│   ├── email-handler.test.ts
-│   ├── address-parser.test.ts
-│   ├── rule-engine.test.ts
-│   ├── whitelist-matcher.test.ts
-│   └── api.test.ts
-├── docs/
-│   ├── setup.md               # Step-by-step deployment guide
-│   ├── dns.md                 # DNS configuration reference
-│   ├── infrastructure.md      # Pulumi stack reference
-│   ├── cloudflare-access.md   # Access policy setup
-│   └── address-format.md      # Address convention documentation
+├── test/                      # Unit tests
+│   └── integration/           # Integration tests (Workers runtime + D1)
+├── scripts/                   # CI helpers
+├── docs/                      # Technical documentation
 └── .github/
     └── workflows/
-        └── deploy.yml         # CI: lint, test, pulumi preview, deploy
+        └── ci.yml             # CI: lint, test, deploy
 ```
 
 ---
@@ -590,7 +560,7 @@ Tags follow `v0.1.0` format. Changelog maintained in `CHANGELOG.md`
 29. [x] Implement rule API endpoints (CRUD + reorder).
 30. [x] Implement failed deliveries API endpoints.
 31. [x] Implement user settings API endpoints.
-32. [ ] API integration tests (including auth/admin scenarios).
+32. [x] API integration tests (including auth/admin scenarios).
 
 ### Phase 4 — Web UI
 
@@ -607,10 +577,10 @@ Tags follow `v0.1.0` format. Changelog maintained in `CHANGELOG.md`
 
 ### Phase 5 — CI/CD & Documentation
 
-43. [ ] GitHub Actions workflow: lint, test, `pulumi preview`, `wrangler deploy`.
+43. [x] GitHub Actions workflow: lint, test, `wrangler deploy`.
 44. [x] Write `README.md` (quick start, architecture, deployment).
 45. [x] Write `docs/` pages (DNS, infrastructure, API reference, known limitations).
-46. [ ] Review repo for any leaked personal data or secrets. Tag release.
+46. [x] Review repo for any leaked personal data or secrets. Tag release.
 
 ---
 
