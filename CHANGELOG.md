@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - API rate limiting — 120 requests/minute per user, in-memory per-isolate sliding window
   - `X-RateLimit-Remaining` and `X-RateLimit-Reset` headers on all authenticated responses
   - `429 Too Many Requests` with `Retry-After` header when exceeded
+- `GET /api/metrics` endpoint — Prometheus exposition format, no auth required
+  - Alias, forwarding, rejection, bandwidth, recipient, rule, and failure counts
 - Auto-purge of failed deliveries older than 30 days via monthly cron trigger
 - Drag-and-drop rule reordering in dashboard UI (calls `POST /api/rules/reorder`)
 

@@ -235,6 +235,7 @@ automatically via the Cloudflare API on first user login.
 **Operational:**
 
 - [x] `GET /api/health` — health check (no auth, checks DB connectivity).
+- [x] `GET /api/metrics` — Prometheus metrics (no auth, D1 aggregates).
 - [x] Rate limiting: 120 requests/minute per user, in-memory per-isolate.
 
 **Auth & Common:**

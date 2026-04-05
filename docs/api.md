@@ -38,6 +38,32 @@ Returns `503` if the database is unreachable:
 
 ---
 
+### Metrics
+
+#### `GET /api/metrics`
+
+No authentication required. Returns Prometheus exposition format (`text/plain; version=0.0.4`).
+
+Exposed metrics:
+
+| Metric | Type | Description |
+|---|---|---|
+| `email_aliases_total` | gauge | Total aliases |
+| `email_aliases_active` | gauge | Active, non-expired aliases |
+| `email_forwarded_total` | gauge | Total emails forwarded |
+| `email_rejected_total` | gauge | Total emails rejected |
+| `email_bytes_forwarded_total` | gauge | Total bytes forwarded |
+| `email_users_total` | gauge | Distinct users |
+| `email_recipients_total{status}` | gauge | Recipients by status (verified/pending) |
+| `email_rules_total{status}` | gauge | Rules by status (active/inactive) |
+| `email_failed_deliveries_total` | gauge | Total failed delivery records |
+| `email_failed_deliveries_24h` | gauge | Failed deliveries in the last 24h |
+| `email_bandwidth_used_bytes` | gauge | Total bandwidth used |
+
+Like `/api/health`, this endpoint requires a Cloudflare Access bypass policy to be accessible to external scrapers.
+
+---
+
 ### Identity
 
 #### `GET /api/me`

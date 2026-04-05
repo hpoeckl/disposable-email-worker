@@ -2,6 +2,7 @@ import { Env } from "./email-handler";
 import { validateAccessJwt, AuthError } from "./auth";
 import { renderDashboard } from "./ui";
 import { checkRateLimit } from "./rate-limit";
+import { collectMetrics } from "./metrics";
 
 export interface RequestContext {
   user: string;      // derived from JWT email localpart
@@ -67,6 +68,24 @@ export async function handleFetch(
       return json({ status: "ok", timestamp: new Date().toISOString() });
     } catch {
       return json({ status: "degraded", error: "database unreachable" }, 503);
+    }
+  }
+
+  // Prometheus metrics — no auth required
+  if (path === "/api/metrics" && request.method === "GET") {
+    try {
+      const body = await collectMetrics(env.DB);
+      return new Response(body, {
+        headers: {
+          "Content-Type": "text/plain; version=0.0.4; charset=utf-8",
+          ...corsHeaders(),
+        },
+      });
+    } catch (err) {
+      return new Response("# error collecting metrics\n", {
+        status: 500,
+        headers: { "Content-Type": "text/plain" },
+      });
     }
   }
 
