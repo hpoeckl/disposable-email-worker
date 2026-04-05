@@ -86,6 +86,18 @@ route("POST", "/api/recipients/sync", async (ctx, request) => {
   return json({ ok: true, synced });
 });
 
+route("PATCH", "/api/recipients/:id", async (ctx, request) => {
+  const user = effectiveUser(ctx, request);
+  const body = await request.json<{ active?: boolean }>();
+  if (body.active !== undefined) {
+    await ctx.db
+      .prepare("UPDATE recipients SET active = ? WHERE id = ? AND user = ?")
+      .bind(body.active ? 1 : 0, parseInt(ctx.params.id), user)
+      .run();
+  }
+  return json({ ok: true });
+});
+
 route("DELETE", "/api/recipients/:id", async (ctx, request) => {
   const user = effectiveUser(ctx, request);
   const recipient = await deleteRecipient(ctx.db, user, parseInt(ctx.params.id));

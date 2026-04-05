@@ -40,6 +40,8 @@ The `count_subject` format also prepends `[n/m]` to the subject line. The origin
 
 Bandwidth is tracked per-user in `user_settings.bandwidth_used`. The default limit is 100 MB. There is currently no automatic monthly reset — `bandwidth_reset_at` is stored but not enforced by a scheduled task.
 
-## No Alias-Specific Recipient Mapping in Dashboard
+## No Per-Alias Recipient Routing
 
-The database schema supports per-alias recipient mapping via the `alias_recipients` join table, but the dashboard does not expose this. All verified recipients for a user receive all forwarded mail. Per-alias recipient assignment would need to be done via direct D1 queries.
+All verified recipients for a user receive all forwarded mail. To route specific
+aliases to specific recipients, use the rule engine with a `forward` action and
+an `alias_tag equals <tag>` condition.

@@ -6,7 +6,6 @@ import {
   createAlias,
   incrementForwarded,
   incrementRejected,
-  getAliasRecipientEmails,
 } from "./db/aliases";
 import { logFailedDelivery } from "./db/failed-deliveries";
 import { listWhitelistEntries } from "./db/whitelist";
@@ -165,18 +164,15 @@ export async function handleEmail(
   let recipients: string[] = [];
 
   if (ruleMatch?.action === "forward" && ruleMatch.forwardTo) {
-    recipients = [ruleMatch.forwardTo];
+    // forward_to is comma-separated list of verified recipient emails
+    recipients = ruleMatch.forwardTo.split(",").map((e) => e.trim()).filter(Boolean);
   }
 
-  if (recipients.length === 0) {
-    recipients = await getAliasRecipientEmails(db, alias.id);
-  }
-
-  // Fallback: if no alias-specific recipients, use all verified recipients for this user
+  // Use all active verified recipients for this user
   if (recipients.length === 0) {
     const { results } = await db
       .prepare(
-        "SELECT email FROM recipients WHERE user = ? AND verified_at IS NOT NULL",
+        "SELECT email FROM recipients WHERE user = ? AND verified_at IS NOT NULL AND active = 1",
       )
       .bind(user)
       .all<{ email: string }>();

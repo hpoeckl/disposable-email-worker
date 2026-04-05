@@ -247,7 +247,7 @@ const HTML = `<!DOCTYPE html>
     <span id="recipients-user-label" class="muted" style="display:none"></span>
   </div>
   <table>
-    <thead><tr><th>Email</th><th>Verified</th><th>Added</th><th>Actions</th></tr></thead>
+    <thead><tr><th>Email</th><th>Verified</th><th>Default</th><th>Added</th><th>Actions</th></tr></thead>
     <tbody id="recipients-body"></tbody>
   </table>
 </div>
@@ -304,7 +304,7 @@ const HTML = `<!DOCTYPE html>
     <div class="form-row"><label>Name</label><input id="rule-name" style="flex:1"></div>
     <div class="form-row"><label>Operator</label><select id="rule-op"><option value="and">AND</option><option value="or">OR</option></select></div>
     <div class="form-row"><label>Action</label><select id="rule-action"><option value="block">Block</option><option value="reject">Reject</option><option value="forward">Forward</option></select></div>
-    <div class="form-row"><label>Forward to</label><input id="rule-fwd" placeholder="(optional)" style="flex:1"></div>
+    <div class="form-row" id="rule-fwd-row"><label>Forward to</label><select id="rule-fwd" multiple style="flex:1;min-height:60px"></select></div>
     <h3 style="font-size:0.85rem;margin:0.5rem 0">Conditions</h3>
     <div id="rule-conditions"></div>
     <button class="btn-sm mt" onclick="addConditionRow()">+ Condition</button>
@@ -578,18 +578,27 @@ function showRuleModal(id) {
   document.getElementById('rule-name').value = '';
   document.getElementById('rule-op').value = 'and';
   document.getElementById('rule-action').value = 'block';
-  document.getElementById('rule-fwd').value = '';
   document.getElementById('rule-conditions').innerHTML = '';
+
+  // Populate forward_to multi-select with verified recipients
+  const fwdSel = document.getElementById('rule-fwd');
+  const verified = recipientsData.filter(r => r.verified_at);
+  fwdSel.innerHTML = verified.map(r => \`<option value="\${esc(r.email)}">\${esc(r.email)}</option>\`).join('');
+
+  let selectedFwd = [];
   if (id) {
     const r = rulesData.find(x => x.id === id);
     if (r) {
       document.getElementById('rule-name').value = r.name;
       document.getElementById('rule-op').value = r.operator;
       document.getElementById('rule-action').value = r.action;
-      document.getElementById('rule-fwd').value = r.forward_to || '';
+      selectedFwd = r.forward_to ? r.forward_to.split(',').map(e => e.trim()) : [];
       r.conditions.forEach(c => addConditionRow(c.field, c.match, c.value));
     }
   }
+  // Set selected options
+  [...fwdSel.options].forEach(o => { o.selected = selectedFwd.includes(o.value); });
+
   if (!document.getElementById('rule-conditions').children.length) addConditionRow();
   document.getElementById('rule-modal').classList.add('active');
 }
@@ -624,7 +633,7 @@ async function saveRule() {
     name,
     operator: document.getElementById('rule-op').value,
     action: document.getElementById('rule-action').value,
-    forward_to: document.getElementById('rule-fwd').value || null,
+    forward_to: [...document.getElementById('rule-fwd').selectedOptions].map(o => o.value).join(',') || null,
     conditions,
   };
 
@@ -647,16 +656,22 @@ async function delRule(id) {
 }
 
 // --- RECIPIENTS ---
+let recipientsData = [];
 async function loadRecipients() {
   const recipients = await api('/recipients' + userParam());
   const tb = document.getElementById('recipients-body');
-  if (recipients.length === 0) { tb.innerHTML = '<tr><td colspan="4" class="empty">No recipients</td></tr>'; return; }
-  tb.innerHTML = recipients.map(r => \`<tr>
-    <td class="mono">\${esc(r.email)}</td>
-    <td>\${r.verified_at ? '<span class="badge badge-active">verified</span>' : '<span class="badge badge-inactive">pending</span>'}</td>
-    <td class="muted" style="font-size:0.75rem">\${fmtDate(r.created_at)}</td>
-    <td class="actions"><button class="btn-sm btn-danger" onclick="delRecipient(\${r.id})">Del</button></td>
-  </tr>\`).join('');
+  recipientsData = recipients;
+  if (recipients.length === 0) { tb.innerHTML = '<tr><td colspan="5" class="empty">No recipients</td></tr>'; return; }
+  tb.innerHTML = recipients.map(r => {
+    const activeLabel = r.active ? '<span class="badge badge-active">yes</span>' : '<span class="badge badge-inactive">no</span>';
+    return \`<tr>
+      <td class="mono">\${esc(r.email)}</td>
+      <td>\${r.verified_at ? '<span class="badge badge-active">verified</span>' : '<span class="badge badge-inactive">pending</span>'}</td>
+      <td><button class="btn-sm" onclick="toggleRecipientActive(\${r.id},\${r.active ? 0 : 1})">\${activeLabel}</button></td>
+      <td class="muted" style="font-size:0.75rem">\${fmtDate(r.created_at)}</td>
+      <td class="actions"><button class="btn-sm btn-danger" onclick="delRecipient(\${r.id})">Del</button></td>
+    </tr>\`;
+  }).join('');
 }
 
 async function addRecipient() {
@@ -665,6 +680,11 @@ async function addRecipient() {
   await api('/recipients' + userParam(), { method: 'POST', body: JSON.stringify({ email }) });
   document.getElementById('new-recipient').value = '';
   toast('Recipient added');
+  loadRecipients();
+}
+
+async function toggleRecipientActive(id, newVal) {
+  await api('/recipients/' + id + userParam(), { method: 'PATCH', body: JSON.stringify({ active: !!newVal }) });
   loadRecipients();
 }
 

@@ -36,6 +36,7 @@ export interface Recipient {
   email: string;
   verified_at: string | null;
   cf_destination_id: string | null;
+  active: number;
   created_at: string;
 }
 

@@ -146,37 +146,3 @@ export async function deleteAlias(
     .run();
 }
 
-export async function getAliasRecipientEmails(
-  db: D1Database,
-  aliasId: number,
-): Promise<string[]> {
-  const result = await db
-    .prepare(
-      `SELECT r.email FROM recipients r
-       INNER JOIN alias_recipients ar ON ar.recipient_id = r.id
-       WHERE ar.alias_id = ? AND r.verified_at IS NOT NULL`,
-    )
-    .bind(aliasId)
-    .all<{ email: string }>();
-  return result.results.map((r) => r.email);
-}
-
-export async function setAliasRecipients(
-  db: D1Database,
-  aliasId: number,
-  recipientIds: number[],
-): Promise<void> {
-  await db
-    .prepare("DELETE FROM alias_recipients WHERE alias_id = ?")
-    .bind(aliasId)
-    .run();
-
-  for (const recipientId of recipientIds) {
-    await db
-      .prepare(
-        "INSERT INTO alias_recipients (alias_id, recipient_id) VALUES (?, ?)",
-      )
-      .bind(aliasId, recipientId)
-      .run();
-  }
-}
