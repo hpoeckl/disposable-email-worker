@@ -27,3 +27,32 @@ jobs:
 
       - name: Integration tests
         run: npm run test:integration
+
+  deploy:
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Generate wrangler.toml
+        run: cp wrangler.toml.example wrangler.toml && node scripts/ci-wrangler-config.mjs
+        env:
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+          BASE_DOMAIN: ${{ secrets.BASE_DOMAIN }}
+          ADMIN_USERS: ${{ secrets.ADMIN_USERS }}
+          CF_ACCESS_TEAM: ${{ secrets.CF_ACCESS_TEAM }}
+          CF_ACCESS_AUD: ${{ secrets.CF_ACCESS_AUD }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy to Cloudflare
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
