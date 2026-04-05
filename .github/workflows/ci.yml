@@ -31,6 +31,14 @@ jobs:
       - name: Integration tests
         run: npm run test:integration
 
+  # Required GitHub repository secrets for deploy:
+  #   CLOUDFLARE_DEPLOY_TOKEN  — API token with Workers Scripts:Edit, D1:Edit, Workers Routes:Edit
+  #   D1_DATABASE_ID           — D1 database ID (from `pulumi stack output databaseId`)
+  #   BASE_DOMAIN              — e.g. "drop.example.com"
+  #   ADMIN_USERS              — comma-separated admin emails
+  #   CF_ACCESS_TEAM           — Cloudflare Access team name
+  #   CF_ACCESS_AUD            — Access application audience tag
+  #   CLOUDFLARE_ACCOUNT_ID    — Cloudflare account ID
   deploy:
     needs: ci
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
