@@ -64,7 +64,7 @@ pulumi stack init dev
 pulumi config set zoneId <value>
 pulumi config set accountId <value>
 pulumi config set baseDomain drop.example.com
-pulumi config set accessAllowedEmail "you@example.com"
+pulumi config set accessAllowedEmails "you@example.com,other@example.com"
 pulumi config set cloudflare:apiToken <token> --secret
 
 # Preview changes
