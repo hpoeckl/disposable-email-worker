@@ -1,6 +1,6 @@
 {
   "name": "disposable-email-worker",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Serverless disposable email gateway on Cloudflare Email Workers",
   "scripts": {

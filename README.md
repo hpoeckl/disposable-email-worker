@@ -147,15 +147,27 @@ npm run migrate:local    # Apply migrations to local D1
 ## Project Structure
 
 ```
-├── infra/              Pulumi IaC (TypeScript)
-├── migrations/         D1 SQL migrations
-├── src/                Worker source code
-│   ├── api/            REST API route handlers
-│   ├── db/             D1 data access layer
-│   └── ui.ts           Dashboard SPA (served from Worker)
-├── test/               Unit tests
-│   └── integration/    Integration tests (Workers runtime + D1)
-└── docs/               Technical documentation
+├── infra/                    Pulumi IaC (TypeScript)
+├── migrations/               D1 SQL migrations
+├── src/
+│   ├── api/                  REST API route handlers
+│   ├── db/                   D1 data access layer
+│   ├── address-parser.ts     Extract tag + user from email address
+│   ├── auth.ts               CF Access JWT validation
+│   ├── cf-email-routing.ts   Cloudflare Email Routing API client
+│   ├── email-handler.ts      Inbound email processing
+│   ├── header-rewriter.ts    From header rewriting
+│   ├── index.ts              Worker entry point (email, fetch, scheduled)
+│   ├── metrics.ts            Prometheus metrics collection
+│   ├── mime.ts               MIME header rewriting
+│   ├── rate-limit.ts         Per-user API rate limiting
+│   ├── router.ts             API route dispatcher + middleware
+│   ├── rule-engine.ts        Rule condition evaluation
+│   ├── ui.ts                 Dashboard SPA (served from Worker)
+│   └── whitelist-matcher.ts  Sender whitelist matching
+├── test/                     Unit tests
+│   └── integration/          Integration tests (Workers runtime + D1)
+└── docs/                     Technical documentation
 ```
 
 See [docs/](docs/) for detailed documentation:

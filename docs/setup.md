@@ -170,6 +170,23 @@ Send a test email to `test@anyuser.drop.example.com` and check if the Worker pro
 3. Send an email to `test@<youruser>.drop.example.com`
 4. Verify it arrives in your inbox with the rewritten `From` header
 
+## Step 15: Configure Access Bypass Policies
+
+The `/api/health` and `/api/metrics` endpoints are designed to be publicly accessible (no auth). However, if your Cloudflare Access application protects the entire domain, it will block unauthenticated requests before they reach the Worker.
+
+To allow external monitoring tools (Uptime Robot, Prometheus scrapers, etc.) to reach these endpoints:
+
+1. Go to **Zero Trust > Access > Applications**
+2. Edit your application
+3. Add two bypass policies:
+
+| Policy Name | Action | Selector | Value |
+|---|---|---|---|
+| Health Check Bypass | Bypass | URI Path | `/api/health` |
+| Metrics Bypass | Bypass | URI Path | `/api/metrics` |
+
+These policies must be ordered **above** your main Allow policy so they match first.
+
 ## Updating
 
 ```bash

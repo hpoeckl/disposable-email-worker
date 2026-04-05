@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-05
+
 ### Added
 
 - `GET /api/health` endpoint — no auth required, checks DB connectivity (returns 200/503)
