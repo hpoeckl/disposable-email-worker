@@ -78,67 +78,67 @@ automatically via the Cloudflare API on first user login.
 
 ### Core Email Handling
 
-- [ ] Parse inbound recipient: extract `tag` (local part) and `user`
+- [x] Parse inbound recipient: extract `tag` (local part) and `user`
       (subdomain prefix before `.drop.example.com`).
-- [ ] Look up alias state in D1; create on first contact if catch-all is
+- [x] Look up alias state in D1; create on first contact if catch-all is
       enabled for the user (see User Settings). New aliases use the user's
       configured default limit (default: 24).
-- [ ] Forward message via `message.forward()` if under the limit.
-- [ ] Reject message if over the limit (configurable: reject vs. silent drop).
-- [ ] Continue counting messages after expiry (track both `forwarded` and
+- [x] Forward message via `message.forward()` if under the limit.
+- [x] Reject message if over the limit (configurable: reject vs. silent drop).
+- [x] Continue counting messages after expiry (track both `forwarded` and
       `rejected` counts).
-- [ ] Reject addresses where the user subdomain is unknown.
-- [ ] Track message size (`message.rawSize`) for bandwidth accounting.
-- [ ] Rewrite `From` header before forwarding to prevent bounce/DSN
+- [x] Reject addresses where the user subdomain is unknown.
+- [x] Track message size (`message.rawSize`) for bandwidth accounting.
+- [x] Rewrite `From` header before forwarding to prevent bounce/DSN
       notifications from the recipient mailbox leaking back to the original
       sender. Counter embedded in the display name so the user can see
       remaining messages at a glance. Configurable display format per user.
-- [ ] Support multiple recipients per alias — call `message.forward()` for
+- [x] Support multiple recipients per alias — call `message.forward()` for
       each attached recipient.
-- [ ] Evaluate rule engine before whitelist/counter logic (rules take
+- [x] Evaluate rule engine before whitelist/counter logic (rules take
       precedence — see Rule Engine).
-- [ ] Log failed deliveries to D1 (sender, recipient, subject, timestamp,
+- [x] Log failed deliveries to D1 (sender, recipient, subject, timestamp,
       error reason, message size).
 
 ### Whitelisting
 
-- [ ] Per-alias whitelist of sender addresses, domains, or domain segments
+- [x] Per-alias whitelist of sender addresses, domains, or domain segments
       (e.g., `*.example.com`).
-- [ ] Whitelisted senders bypass the counter entirely — messages always
+- [x] Whitelisted senders bypass the counter entirely — messages always
       forward regardless of expiry.
-- [ ] Whitelist entries manageable per alias via the web UI and API.
+- [x] Whitelist entries manageable per alias via the web UI and API.
 
 ### Counter Management
 
-- [ ] Reset counter for any alias (via UI or API), re-enabling forwarding.
-- [ ] Change the forwarding limit for an existing alias.
-- [ ] Display both `forwarded` and `rejected` counts per alias.
+- [x] Reset counter for any alias (via UI or API), re-enabling forwarding.
+- [x] Change the forwarding limit for an existing alias.
+- [x] Display both `forwarded` and `rejected` counts per alias.
 
 ### Alias Metadata
 
-- [ ] Description field per alias — free-text note for what the alias is used
+- [x] Description field per alias — free-text note for what the alias is used
       for (e.g., "Amazon orders", "Newsletter signup 2026").
-- [ ] Multiple recipients per alias — each alias can forward to one or more
+- [x] Multiple recipients per alias — each alias can forward to one or more
       verified email addresses. Default: the user's primary address.
 
 ### Rule Engine
 
-- [ ] User-level rules evaluated in priority order on every inbound message.
-- [ ] Each rule has ordered conditions (AND/OR logic) matching against:
+- [x] User-level rules evaluated in priority order on every inbound message.
+- [x] Each rule has ordered conditions (AND/OR logic) matching against:
       sender address, sender domain, subject, recipient alias tag.
-- [ ] Each rule has an action: forward (default), block (silently drop),
+- [x] Each rule has an action: forward (default), block (silently drop),
       reject (with bounce), forward to specific recipient(s).
-- [ ] Rules evaluated before whitelist and counter logic — a rule match
+- [x] Rules evaluated before whitelist and counter logic — a rule match
       short-circuits further processing.
-- [ ] Rules have active/inactive toggle and execution counter.
-- [ ] Manageable via API and UI with drag-and-drop reordering.
+- [x] Rules have active/inactive toggle and execution counter.
+- [x] Manageable via API and UI (drag-and-drop reordering not yet implemented).
 
 ### User Settings
 
-- [ ] Catch-all toggle per user — when enabled, unknown tags at
+- [x] Catch-all toggle per user — when enabled, unknown tags at
       `<tag>@<user>.drop.example.com` auto-provision on first contact.
       When disabled, only pre-created aliases accept mail.
-- [ ] Display from-name format — controls how the `From` header and
+- [x] Display from-name format — controls how the `From` header and
       counter visibility appear on forwarded messages. Format options:
   - `sender_count_alias`: `"sender@ext.com [3/24] via amazon" <noreply@...>`
     (default — shows sender, counter, and alias tag)
@@ -148,94 +148,94 @@ automatically via the Cloudflare API on first user login.
     rewritten to `[3/24] Original Subject` (counter in subject line)
   - `alias_only`: `"amazon" <noreply@...>`
   - `noreply`: `<noreply@...>` (no display name)
-- [ ] Default forwarding limit for new auto-provisioned aliases (default: 24).
+- [x] Default forwarding limit for new auto-provisioned aliases (default: 24).
 
 ### Bandwidth Tracking
 
-- [ ] Track cumulative bytes forwarded per user (from `message.rawSize`).
-- [ ] Configurable monthly bandwidth limit per user (env var default,
+- [x] Track cumulative bytes forwarded per user (from `message.rawSize`).
+- [x] Configurable monthly bandwidth limit per user (env var default,
       overridable per user by admin).
-- [ ] Reject forwarding when bandwidth exceeded; log as failed delivery.
+- [x] Reject forwarding when bandwidth exceeded; log as failed delivery.
 
 ### Failed Delivery Tracking
 
-- [ ] Log all failed/rejected deliveries to a `failed_deliveries` D1 table.
-- [ ] Record: alias, sender, subject (truncated), timestamp, failure reason,
+- [x] Log all failed/rejected deliveries to a `failed_deliveries` D1 table.
+- [x] Record: alias, sender, subject (truncated), timestamp, failure reason,
       message size.
-- [ ] Viewable and searchable in UI; deletable by user.
+- [x] Viewable and searchable in UI; deletable by user.
 - [ ] Retention policy: auto-purge after configurable number of days.
 
 ### Web UI (Management Dashboard)
 
-- [ ] Single-page application, mobile-friendly (responsive).
-- [ ] Hosted on Cloudflare Pages (static site, calls Worker API).
-- [ ] Protected by Cloudflare Access with email OTP (no passwords, no
+- [x] Single-page application, mobile-friendly (responsive).
+- [x] Served directly from Worker (no separate Pages deployment).
+- [x] Protected by Cloudflare Access with email OTP (no passwords, no
       additional auth infrastructure).
-- [ ] Features:
-  - [ ] List all aliases with status (active/expired), counts, description,
+- [x] Features:
+  - [x] List all aliases with status (active/expired), counts, description,
         recipient summary — scoped to authenticated user.
-  - [ ] Create alias manually (pre-provision before first use).
-  - [ ] Edit alias: reset counter, change limit, toggle active/inactive,
+  - [x] Create alias manually (pre-provision before first use).
+  - [x] Edit alias: reset counter, change limit, toggle active/inactive,
         update description, manage recipients.
-  - [ ] Manage whitelist entries per alias (add/remove addresses, domains,
+  - [x] Manage whitelist entries per alias (add/remove addresses, domains,
         patterns).
-  - [ ] Delete alias (removes D1 records entirely).
-  - [ ] Search/filter aliases.
-  - [ ] Rule management: list, create, edit, reorder, toggle rules.
-  - [ ] Failed deliveries view: list, search, delete.
-  - [ ] User settings: catch-all toggle, display from-name format, default
+  - [x] Delete alias (removes D1 records entirely).
+  - [x] Search/filter aliases.
+  - [x] Rule management: list, create, edit, reorder, toggle rules.
+  - [x] Failed deliveries view: list, search, delete.
+  - [x] User settings: catch-all toggle, display from-name format, default
         limit.
-  - [ ] Bandwidth usage display (current month vs. limit).
-  - [ ] Admin view: list/manage all users' aliases (visible only to admins).
+  - [x] Bandwidth usage display (current month vs. limit).
+  - [x] Admin view: list/manage all users' aliases (visible only to admins).
 
 ### API (Worker `fetch()` Handler)
 
 **Aliases:**
 
-- [ ] `GET    /api/aliases`              — List aliases (own user; all if admin).
-- [ ] `POST   /api/aliases`              — Create alias (own user only).
-- [ ] `GET    /api/aliases/:tag`         — Get alias details (own or admin).
-- [ ] `PATCH  /api/aliases/:tag`         — Update alias (reset counter, change
+- [x] `GET    /api/aliases`              — List aliases (own user; all if admin).
+- [x] `POST   /api/aliases`              — Create alias (own user only).
+- [x] `GET    /api/aliases/:tag`         — Get alias details (own or admin).
+- [x] `PATCH  /api/aliases/:tag`         — Update alias (reset counter, change
       limit, toggle state, description, recipients). Own or admin.
-- [ ] `DELETE /api/aliases/:tag`         — Delete alias (own or admin).
+- [x] `DELETE /api/aliases/:tag`         — Delete alias (own or admin).
 
 **Whitelist:**
 
-- [ ] `GET    /api/aliases/:tag/whitelist`     — List whitelist entries.
-- [ ] `POST   /api/aliases/:tag/whitelist`     — Add whitelist entry.
-- [ ] `DELETE /api/aliases/:tag/whitelist/:id` — Remove whitelist entry.
+- [x] `GET    /api/aliases/:tag/whitelist`     — List whitelist entries.
+- [x] `POST   /api/aliases/:tag/whitelist`     — Add whitelist entry.
+- [x] `DELETE /api/aliases/:tag/whitelist/:id` — Remove whitelist entry.
 
 **Recipients:**
 
-- [ ] `GET    /api/recipients`                 — List verified recipients.
-- [ ] `POST   /api/recipients`                 — Add recipient (triggers
+- [x] `GET    /api/recipients`                 — List verified recipients.
+- [x] `POST   /api/recipients`                 — Add recipient (triggers
       verification email).
-- [ ] `DELETE /api/recipients/:id`             — Remove recipient.
+- [x] `DELETE /api/recipients/:id`             — Remove recipient.
 
 **Rules:**
 
-- [ ] `GET    /api/rules`                      — List rules (ordered).
-- [ ] `POST   /api/rules`                      — Create rule.
-- [ ] `GET    /api/rules/:id`                  — Get rule details.
-- [ ] `PATCH  /api/rules/:id`                  — Update rule.
-- [ ] `DELETE /api/rules/:id`                  — Delete rule.
-- [ ] `POST   /api/rules/reorder`              — Reorder rules.
+- [x] `GET    /api/rules`                      — List rules (ordered).
+- [x] `POST   /api/rules`                      — Create rule.
+- [x] `GET    /api/rules/:id`                  — Get rule details.
+- [x] `PATCH  /api/rules/:id`                  — Update rule.
+- [x] `DELETE /api/rules/:id`                  — Delete rule.
+- [x] `POST   /api/rules/reorder`              — Reorder rules.
 
 **Failed Deliveries:**
 
-- [ ] `GET    /api/failed-deliveries`          — List failed deliveries.
-- [ ] `DELETE /api/failed-deliveries/:id`      — Delete entry.
+- [x] `GET    /api/failed-deliveries`          — List failed deliveries.
+- [x] `DELETE /api/failed-deliveries/:id`      — Delete entry.
 
 **User Settings:**
 
-- [ ] `GET    /api/settings`                   — Get user settings.
-- [ ] `PATCH  /api/settings`                   — Update settings (catch-all,
+- [x] `GET    /api/settings`                   — Get user settings.
+- [x] `PATCH  /api/settings`                   — Update settings (catch-all,
       from-name format, default limit).
 
 **Auth & Common:**
 
-- [ ] API protected by Cloudflare Access JWT validation (same policy as UI).
-- [ ] All endpoints derive `user` from JWT identity; admin flag checked
+- [x] API protected by Cloudflare Access JWT validation (same policy as UI).
+- [x] All endpoints derive `user` from JWT identity; admin flag checked
       against `ADMIN_USERS` env var for cross-user access.
 
 ---
@@ -413,23 +413,23 @@ in Pulumi Cloud (free tier) or a self-managed backend.
 
 ### Infrastructure Setup Checklist
 
-- [ ] Domain added to Cloudflare (free plan), nameservers migrated.
-- [ ] Verify Google Workspace MX records on apex domain are intact.
-- [ ] Run `pulumi up` in `infra/` to provision:
-  - [ ] MX record for `drop.example.com` → Cloudflare email routing.
-  - [ ] SPF record: `v=spf1 include:_spf.mx.cloudflare.net -all`.
-  - [ ] CNAME wildcard `*.drop.example.com -> drop.example.com`.
-  - [ ] Email Routing catch-all → Email Worker.
-  - [ ] Cloudflare Access application with email OTP policy.
-  - [ ] D1 database.
-- [ ] Test CNAME wildcard approach for per-user subdomains:
-  - [ ] Send test email to `test@x.drop.example.com` and verify Worker
+- [x] Domain added to Cloudflare (free plan), nameservers migrated.
+- [x] Verify Google Workspace MX records on apex domain are intact.
+- [x] Run `pulumi up` in `infra/` to provision:
+  - [x] MX record for `drop.example.com` → Cloudflare email routing.
+  - [x] SPF record: `v=spf1 include:_spf.mx.cloudflare.net -all`.
+  - [x] CNAME wildcard `*.drop.example.com -> drop.example.com`.
+  - [x] Email Routing catch-all → Email Worker.
+  - [x] Cloudflare Access application with email OTP policy.
+  - [x] D1 database.
+- [x] Test CNAME wildcard approach for per-user subdomains:
+  - [x] Send test email to `test@x.drop.example.com` and verify Worker
         receives it.
-  - [ ] If CNAME wildcard works: no further DNS setup needed per user.
-  - [ ] If CNAME wildcard fails: implement Cloudflare API provisioning in
+  - [x] If CNAME wildcard works: no further DNS setup needed per user.
+  - [x] If CNAME wildcard fails: implement Cloudflare API provisioning in
         Worker (create MX + SPF records per user on first login). Store
         `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ZONE_ID` as secrets.
-- [ ] Run `wrangler d1 migrations apply` to initialize schema.
+- [x] Run `wrangler d1 migrations apply` to initialize schema.
 
 ---
 
