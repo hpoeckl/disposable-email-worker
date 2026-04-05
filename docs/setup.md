@@ -187,6 +187,8 @@ To allow external monitoring tools (Uptime Robot, Prometheus scrapers, etc.) to 
 |---|---|---|---|
 | Health Check Bypass | Bypass | URI Path | `/api/health` |
 | Metrics Bypass | Bypass | URI Path | `/api/metrics` |
+| Security.txt Bypass | Bypass | URI Path | `/.well-known/security.txt` |
+| Robots.txt Bypass | Bypass | URI Path | `/robots.txt` |
 
 These policies must be ordered **above** your main Allow policy so they match first.
 
