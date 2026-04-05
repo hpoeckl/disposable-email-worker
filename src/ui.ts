@@ -1,6 +1,12 @@
 export function renderDashboard(): Response {
   return new Response(HTML, {
-    headers: { "Content-Type": "text/html; charset=utf-8" },
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-cache",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "Content-Security-Policy": "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'",
+    },
   });
 }
 
@@ -10,6 +16,7 @@ const HTML = `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Disposable Email Gateway</title>
+<meta name="theme-color" content="#0f1117">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='5' y='25' width='90' height='55' rx='4' fill='none' stroke='%236c8aff' stroke-width='6'/><polyline points='5,25 50,58 95,25' fill='none' stroke='%236c8aff' stroke-width='6'/></svg>">
 <style>
   :root {

@@ -49,6 +49,13 @@ export async function handleFetch(
   const url = new URL(request.url);
   const path = url.pathname;
 
+  // robots.txt — disallow all
+  if (path === "/robots.txt") {
+    return new Response("User-agent: *\nDisallow: /\n", {
+      headers: { "Content-Type": "text/plain" },
+    });
+  }
+
   // Serve UI for non-API routes
   if (!path.startsWith("/api/")) {
     return renderDashboard();
