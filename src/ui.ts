@@ -585,8 +585,13 @@ async function delWl(id) {
 // --- RULES ---
 let rulesData = [];
 async function loadRules() {
-  rulesData = await api('/rules' + userParam());
   const tb = document.getElementById('rules-body');
+  if (isAdmin && !adminTargetUser) {
+    rulesData = [];
+    tb.innerHTML = '<tr><td colspan="8" class="empty">Select a user to view rules</td></tr>';
+    return;
+  }
+  rulesData = await api('/rules' + userParam());
   if (rulesData.length === 0) { tb.innerHTML = '<tr><td colspan="8" class="empty">No rules</td></tr>'; return; }
   tb.innerHTML = rulesData.map(r => {
     const conds = r.conditions.map(c => \`\${c.field} \${c.match} "\${esc(c.value)}"\`).join(r.operator === 'and' ? ' AND ' : ' OR ');
@@ -750,8 +755,13 @@ function initRuleDragDrop() {
 // --- RECIPIENTS ---
 let recipientsData = [];
 async function loadRecipients() {
-  const recipients = await api('/recipients' + userParam());
   const tb = document.getElementById('recipients-body');
+  if (isAdmin && !adminTargetUser) {
+    recipientsData = [];
+    tb.innerHTML = '<tr><td colspan="5" class="empty">Select a user to view recipients</td></tr>';
+    return;
+  }
+  const recipients = await api('/recipients' + userParam());
   recipientsData = recipients;
   if (recipients.length === 0) { tb.innerHTML = '<tr><td colspan="5" class="empty">No recipients</td></tr>'; return; }
   tb.innerHTML = recipients.map(r => {
@@ -842,6 +852,13 @@ async function purgeDeliveries() {
 
 // --- SETTINGS ---
 async function loadSettings() {
+  if (isAdmin && !adminTargetUser) {
+    document.getElementById('set-catchall').value = '';
+    document.getElementById('set-format').value = '';
+    document.getElementById('set-limit').value = '';
+    document.getElementById('set-bandwidth').textContent = 'Select a user to view settings';
+    return;
+  }
   const s = await api('/settings' + userParam());
   document.getElementById('set-catchall').value = s.catch_all;
   document.getElementById('set-format').value = s.from_name_format;
