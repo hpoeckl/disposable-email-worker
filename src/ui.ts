@@ -470,9 +470,10 @@ function updateUserLabels() {
   const labels = ['rules-user-label', 'recipients-user-label', 'settings-user-label'];
   labels.forEach(id => {
     const el = document.getElementById(id);
-    if (isAdmin) {
+    if (isAdmin && adminTargetUser) {
       el.style.display = '';
       el.textContent = 'Acting as: ' + target;
+      el.style.color = 'var(--warn)';
     } else {
       el.style.display = 'none';
     }
