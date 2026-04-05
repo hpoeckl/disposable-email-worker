@@ -192,6 +192,27 @@ const HTML = `<!DOCTYPE html>
   }
   #toast.error { background: #3a1a1a; color: var(--danger); display: block; }
   #toast.success { background: #1a3a1a; color: var(--success); display: block; }
+
+  /* Responsive table wrapper */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    body { padding: 0.5rem; }
+    h1 { font-size: 1.1rem; }
+    .tabs { gap: 0; }
+    .tab { padding: 0.4rem 0.6rem; font-size: 0.75rem; }
+    .form-row { flex-direction: column; align-items: stretch; }
+    .form-row input, .form-row select, .form-row button { width: 100%; }
+    label { min-width: auto; }
+    .admin-bar { flex-direction: column; align-items: stretch; }
+    .admin-bar select { width: 100%; }
+    .modal { min-width: auto; width: 95%; padding: 1rem; }
+    .search-row input { max-width: 100%; }
+    table { font-size: 0.7rem; }
+    th, td { padding: 0.3rem 0.4rem; }
+    .actions { flex-wrap: wrap; }
+  }
 </style>
 </head>
 <body>
@@ -227,10 +248,10 @@ const HTML = `<!DOCTYPE html>
   <div class="search-row">
     <input id="alias-search" placeholder="Filter aliases..." oninput="filterAliases()">
   </div>
-  <table>
+  <div class="table-wrap"><table>
     <thead><tr><th>Tag</th><th>User</th><th>Description</th><th>Count</th><th>WL</th><th>Status</th><th>Last Forward</th><th>Actions</th></tr></thead>
     <tbody id="aliases-body"></tbody>
-  </table>
+  </table></div>
 </div>
 
 <!-- RULES -->
@@ -239,10 +260,10 @@ const HTML = `<!DOCTYPE html>
     <button class="btn-accent" onclick="showRuleModal()">New Rule</button>
     <span id="rules-user-label" class="muted" style="display:none"></span>
   </div>
-  <table class="mt">
+  <div class="table-wrap"><table class="mt">
     <thead><tr><th></th><th>Pri</th><th>Name</th><th>Conditions</th><th>Action</th><th>Hits</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody id="rules-body"></tbody>
-  </table>
+  </table></div>
 </div>
 
 <!-- RECIPIENTS -->
@@ -253,10 +274,10 @@ const HTML = `<!DOCTYPE html>
     <button class="btn-sm" onclick="syncRecipients()">Sync CF</button>
     <span id="recipients-user-label" class="muted" style="display:none"></span>
   </div>
-  <table>
+  <div class="table-wrap"><table>
     <thead><tr><th>Email</th><th>Verified</th><th>Default</th><th>Added</th><th>Actions</th></tr></thead>
     <tbody id="recipients-body"></tbody>
-  </table>
+  </table></div>
 </div>
 
 <!-- FAILED DELIVERIES -->
@@ -267,10 +288,10 @@ const HTML = `<!DOCTYPE html>
   <div class="search-row">
     <input id="delivery-search" placeholder="Filter deliveries..." oninput="filterDeliveries()">
   </div>
-  <table>
+  <div class="table-wrap"><table>
     <thead><tr><th>Date</th><th id="del-user-th" style="display:none">User</th><th>Alias</th><th>Sender</th><th>Subject</th><th>Reason</th><th></th></tr></thead>
     <tbody id="deliveries-body"></tbody>
-  </table>
+  </table></div>
 </div>
 
 <!-- SETTINGS -->
@@ -295,10 +316,10 @@ const HTML = `<!DOCTYPE html>
     <input id="new-user" placeholder="username" style="width:200px">
     <button class="btn-accent" onclick="createUser()">Add User</button>
   </div>
-  <table>
+  <div class="table-wrap"><table>
     <thead><tr><th>User</th><th>Aliases</th><th>Recipients</th><th>Rules</th><th>Bandwidth</th><th>First Alias</th><th>Actions</th></tr></thead>
     <tbody id="users-body"></tbody>
-  </table>
+  </table></div>
 </div>
 
 <!-- WHITELIST MODAL -->
