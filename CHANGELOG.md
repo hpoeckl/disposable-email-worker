@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Users tab in dashboard (admin only) — view, create, delete users with summary stats
 - Pulumi `accessAllowedEmails` config accepts comma-separated list (replaces `accessAllowedEmail`)
 
+### Fixed
+
+- Admin "View as" dropdown now includes users without aliases
+- Rules, Recipients, and Settings panels show "Select a user" when admin has "All users" selected
+- Table row borders span full row height when cells wrap to multiple lines
+- Mobile responsiveness: scrollable tables, stacked forms, responsive modals on <640px
+
 ## [0.4.0] - 2026-04-05
 
 ### Added
