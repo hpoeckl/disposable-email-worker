@@ -70,8 +70,8 @@ const HTML = `<!DOCTYPE html>
   th, td {
     text-align: left;
     padding: 0.4rem 0.6rem;
-    border-bottom: 1px solid var(--border);
   }
+  tr { border-bottom: 1px solid var(--border); }
   th { color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
   tr:hover { background: var(--surface); }
 
