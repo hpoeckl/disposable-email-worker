@@ -305,17 +305,17 @@ const HTML = `<!DOCTYPE html>
 <!-- SETTINGS -->
 <div id="settings" class="panel">
   <div id="settings-user-label" class="muted" style="display:none;margin-bottom:0.5rem"></div>
-  <div class="form-row"><label>Catch-all</label><select id="set-catchall"><option value="1">Enabled</option><option value="0">Disabled</option></select></div>
-  <div class="form-row"><label>From format</label><select id="set-format">
+  <div class="form-row"><label>Catch-all</label><select id="set-catchall" onchange="saveSettings()"><option value="1">Enabled</option><option value="0">Disabled</option></select></div>
+  <div class="form-row"><label>From format</label><select id="set-format" onchange="saveSettings()">
     <option value="sender_count_alias">sender [n/m] via tag</option>
     <option value="sender_via_alias">sender via tag</option>
     <option value="count_subject">[n/m] subject</option>
     <option value="alias_only">tag only</option>
     <option value="noreply">noreply</option>
   </select></div>
-  <div class="form-row"><label>Default limit</label><input id="set-limit" type="number" style="width:80px"></div>
+  <div class="form-row"><label>Default limit</label><input id="set-limit" type="number" style="width:80px" onchange="saveSettings()"></div>
   <div class="form-row"><label>Bandwidth</label><span id="set-bandwidth" class="mono"></span></div>
-  <button class="btn-accent" onclick="saveSettings()">Save</button>
+
 </div>
 
 <!-- USERS (admin only) -->
