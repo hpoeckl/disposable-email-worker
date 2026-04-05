@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Admin user management: `GET /api/users`, `POST /api/users`, `DELETE /api/users/:user`
+- Users tab in dashboard (admin only) — view, create, delete users with summary stats
+- Pulumi `accessAllowedEmails` config accepts comma-separated list (replaces `accessAllowedEmail`)
+
 ## [0.4.0] - 2026-04-05
 
 ### Added

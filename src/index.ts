@@ -10,6 +10,7 @@ import "./api/rules";
 import "./api/recipients";
 import "./api/failed-deliveries";
 import "./api/settings";
+import "./api/users";
 
 export default {
   async email(message: ForwardableEmailMessage, env: Env): Promise<void> {

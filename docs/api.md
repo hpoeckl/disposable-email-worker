@@ -76,6 +76,32 @@ Returns the authenticated user's identity and admin status.
 
 ---
 
+### Users (admin only)
+
+#### `GET /api/users`
+
+List all users with summary stats (alias count, recipient count, rule count, bandwidth).
+
+```json
+[
+  { "user": "alice", "alias_count": 5, "recipient_count": 2, "rule_count": 1, "bandwidth_used": 0, "bandwidth_limit": 104857600, "created_at": "2026-04-01 12:00:00" }
+]
+```
+
+#### `POST /api/users`
+
+Create (pre-provision) a user. Auto-creates their `user_settings` row with defaults.
+
+```json
+{ "user": "bob" }
+```
+
+#### `DELETE /api/users/:user`
+
+Delete a user and all their data (aliases, rules, recipients, settings, failed deliveries). Cannot delete yourself.
+
+---
+
 ### Aliases
 
 #### `GET /api/aliases`

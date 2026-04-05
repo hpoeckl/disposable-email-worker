@@ -6,7 +6,7 @@ const zoneId = config.require("zoneId");
 const accountId = config.require("accountId");
 const baseDomain = config.require("baseDomain");
 const workerName = config.get("workerName") ?? "disposable-email-worker";
-const accessAllowedEmail = config.require("accessAllowedEmail");
+const accessAllowedEmails = config.require("accessAllowedEmails");
 const enableCatchAll = config.getBoolean("enableCatchAll") ?? false;
 
 // ---------------------------------------------------------------------------
@@ -97,7 +97,11 @@ const dashboard = new cloudflare.ZeroTrustAccessApplication("dashboard", {
       name: "Email OTP",
       decision: "allow",
       precedence: 1,
-      includes: [{ email: { email: accessAllowedEmail } }],
+      includes: accessAllowedEmails
+        .split(",")
+        .map((e) => e.trim())
+        .filter(Boolean)
+        .map((email) => ({ email: { email } })),
     },
   ],
 });

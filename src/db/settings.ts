@@ -57,6 +57,45 @@ export async function updateSettings(
     .run();
 }
 
+export interface UserSummary {
+  user: string;
+  alias_count: number;
+  recipient_count: number;
+  rule_count: number;
+  bandwidth_used: number;
+  bandwidth_limit: number;
+  created_at: string | null;
+}
+
+export async function listUsers(db: D1Database): Promise<UserSummary[]> {
+  return (
+    await db
+      .prepare(
+        `SELECT
+          s.user,
+          s.bandwidth_used,
+          s.bandwidth_limit,
+          (SELECT MIN(created_at) FROM aliases WHERE user = s.user) as created_at,
+          (SELECT COUNT(*) FROM aliases WHERE user = s.user) as alias_count,
+          (SELECT COUNT(*) FROM recipients WHERE user = s.user) as recipient_count,
+          (SELECT COUNT(*) FROM rules WHERE user = s.user) as rule_count
+        FROM user_settings s
+        ORDER BY s.user`,
+      )
+      .all<UserSummary>()
+  ).results;
+}
+
+export async function deleteUser(db: D1Database, user: string): Promise<void> {
+  await db.batch([
+    db.prepare("DELETE FROM failed_deliveries WHERE user = ?").bind(user),
+    db.prepare("DELETE FROM rules WHERE user = ?").bind(user),
+    db.prepare("DELETE FROM aliases WHERE user = ?").bind(user),
+    db.prepare("DELETE FROM recipients WHERE user = ?").bind(user),
+    db.prepare("DELETE FROM user_settings WHERE user = ?").bind(user),
+  ]);
+}
+
 export async function addBandwidth(
   db: D1Database,
   user: string,
