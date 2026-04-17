@@ -1,4 +1,4 @@
-import type { UserSettings, FromNameFormat } from "./types";
+import type { UserSettings, FromNameFormat, SubjectFormat } from "./types";
 
 export async function getSettings(
   db: D1Database,
@@ -29,6 +29,7 @@ export async function updateSettings(
   updates: {
     catch_all?: number;
     from_name_format?: FromNameFormat;
+    subject_format?: SubjectFormat;
     default_limit?: number;
   },
 ): Promise<void> {
@@ -42,6 +43,10 @@ export async function updateSettings(
   if (updates.from_name_format !== undefined) {
     fields.push("from_name_format = ?");
     values.push(updates.from_name_format);
+  }
+  if (updates.subject_format !== undefined) {
+    fields.push("subject_format = ?");
+    values.push(updates.subject_format);
   }
   if (updates.default_limit !== undefined) {
     fields.push("default_limit = ?");

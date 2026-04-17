@@ -1,14 +1,21 @@
 export type FromNameFormat =
   | "sender_count_alias"
   | "sender_via_alias"
-  | "count_subject"
+  | "tag_number_sender"
+  | "count_subject"   // legacy — migrated to sender_via_alias + subject_format=count_prefix
   | "alias_only"
   | "noreply";
+
+export type SubjectFormat =
+  | "original"
+  | "count_prefix"
+  | "tag_count_prefix";
 
 export interface UserSettings {
   user: string;
   catch_all: number;
   from_name_format: FromNameFormat;
+  subject_format: SubjectFormat;
   default_limit: number;
   bandwidth_limit: number;
   bandwidth_used: number;
