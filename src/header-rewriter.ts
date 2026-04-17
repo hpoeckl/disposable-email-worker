@@ -25,8 +25,6 @@ export function rewriteHeaders(
 
   // Whitelisted senders bypass the forwarded counter, so counter-based formats
   // must not show [n/m] — it would never change and mislead the user.
-  // Whitelisted senders bypass the forwarded counter, so counter-based formats
-  // must not show [n/m] — it would never change and mislead the user.
   // [wl] replaces the counter slot where one exists, appends otherwise.
   if (whitelisted) {
     let from: string | null;
