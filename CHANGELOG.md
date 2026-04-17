@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-04-17
+
+### Fixed
+
+- Whitelisted From header now respects the configured `from_name_format` instead of always using `sender via tag`
+- `[wl]` replaces the counter slot in counter-based formats (`sender_count_alias`, `tag_number_sender`); appends as suffix in counter-free formats — consistent position and bracket style with `[n/m]`
+- Subject format suppressed for whitelisted senders (counter never increments for them)
+
 ## [0.7.0] - 2026-04-17
 
 ### Added
