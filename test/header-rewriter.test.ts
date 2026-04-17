@@ -7,6 +7,7 @@ const base: RewriteInput = {
   forwarded: 3,
   limit: 24,
   format: "sender_count_alias",
+  subjectFormat: "original",
   noReplyAddress: "noreply@drop.example.com",
 };
 
@@ -34,10 +35,10 @@ describe("rewriteHeaders", () => {
     });
   });
 
-  describe("count_subject", () => {
-    it("prepends counter to subject and sets From to counter with noreply", () => {
+  describe("count_subject (legacy)", () => {
+    it("behaves as sender_via_alias + count_prefix after migration", () => {
       const result = rewriteHeaders(
-        { ...base, format: "count_subject" },
+        { ...base, format: "count_subject", subjectFormat: "count_prefix" },
         "Your order",
       );
       expect(result.from).toBe(
