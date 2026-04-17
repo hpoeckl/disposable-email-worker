@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-04-17
+
+### Added
+
+- `tag_number_sender` From format: `tag [n/m] sender` display name
+- `subject_format` setting — separate control for Subject header rewriting
+  - `original`: no change (default)
+  - `count_prefix`: `[n/m] original subject`
+  - `tag_count_prefix`: `tag [n/m] original subject`
+- DB migration `0005_subject_format`: new `subject_format` column, migrates existing `count_subject` users to `sender_via_alias` + `count_prefix`
+
+### Changed
+
+- `count_subject` From format retired from UI — replaced by combining `sender_via_alias` with `subject_format = count_prefix`
+- Alias modal: Save button removed; fields auto-save on change/blur; Reset counter requires explicit Confirm button
+- Rule modal: Save button disabled on open when editing; re-enables on first change
+- Whitelist add/remove now refreshes alias list immediately (whitelist_count badge was stale)
+
+### Fixed
+
+- Tab switch re-fetches data when stale (>30s), so newly auto-provisioned aliases appear without a full page reload
+- Rule edit modal Save button visually distinct from enabled state when disabled
+
 ## [0.6.0] - 2026-04-06
 
 ### Added

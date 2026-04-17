@@ -1,4 +1,4 @@
-import type { FromNameFormat } from "./db/types";
+import type { FromNameFormat, SubjectFormat } from "./db/types";
 
 export interface RewriteInput {
   sender: string;
@@ -6,6 +6,7 @@ export interface RewriteInput {
   forwarded: number;
   limit: number;
   format: FromNameFormat;
+  subjectFormat: SubjectFormat;
   noReplyAddress: string; // e.g. "noreply@drop.example.com"
   whitelisted?: boolean;
 }
@@ -19,7 +20,7 @@ export function rewriteHeaders(
   input: RewriteInput,
   originalSubject: string,
 ): RewriteResult {
-  const { sender, tag, forwarded, limit, format, noReplyAddress, whitelisted } = input;
+  const { sender, tag, forwarded, limit, format, subjectFormat, noReplyAddress, whitelisted } = input;
   const counter = `[${forwarded}/${limit}]`;
 
   if (whitelisted) {
@@ -29,37 +30,48 @@ export function rewriteHeaders(
     };
   }
 
+  let from: string | null;
   switch (format) {
     case "sender_count_alias":
-      return {
-        from: `"${esc(sender)} ${counter} via ${esc(tag)}" <${noReplyAddress}>`,
-        subject: null,
-      };
+      from = `"${esc(sender)} ${counter} via ${esc(tag)}" <${noReplyAddress}>`;
+      break;
 
     case "sender_via_alias":
-      return {
-        from: `"${esc(sender)} via ${esc(tag)}" <${noReplyAddress}>`,
-        subject: null,
-      };
+      from = `"${esc(sender)} via ${esc(tag)}" <${noReplyAddress}>`;
+      break;
 
-    case "count_subject":
-      return {
-        from: `"${esc(sender)} via ${esc(tag)}" <${noReplyAddress}>`,
-        subject: `${counter} ${originalSubject}`,
-      };
+    case "tag_number_sender":
+      from = `"${esc(tag)} ${counter} ${esc(sender)}" <${noReplyAddress}>`;
+      break;
 
     case "alias_only":
-      return {
-        from: `"${esc(tag)}" <${noReplyAddress}>`,
-        subject: null,
-      };
+      from = `"${esc(tag)}" <${noReplyAddress}>`;
+      break;
 
     case "noreply":
-      return {
-        from: `<${noReplyAddress}>`,
-        subject: null,
-      };
+      from = `<${noReplyAddress}>`;
+      break;
+
+    case "count_subject":
+      // Legacy: treated as sender_via_alias — subject_format handles the prefix
+      from = `"${esc(sender)} via ${esc(tag)}" <${noReplyAddress}>`;
+      break;
   }
+
+  let subject: string | null;
+  switch (subjectFormat) {
+    case "count_prefix":
+      subject = `${counter} ${originalSubject}`;
+      break;
+    case "tag_count_prefix":
+      subject = `${esc(tag)} ${counter} ${originalSubject}`;
+      break;
+    case "original":
+    default:
+      subject = null;
+  }
+
+  return { from, subject };
 }
 
 /** Escape double quotes in display name */

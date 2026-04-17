@@ -113,6 +113,7 @@ const HTML = `<!DOCTYPE html>
   .btn-danger:hover { border-color: var(--danger); }
   .btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
   .btn-accent:hover { background: var(--accent-hover); }
+  .btn-accent:disabled { background: var(--surface); color: var(--muted); border-color: var(--border); cursor: not-allowed; }
 
   /* Forms */
   input, select {
@@ -310,9 +311,14 @@ const HTML = `<!DOCTYPE html>
   <div class="form-row"><label>From format</label><select id="set-format" onchange="saveSettings()">
     <option value="sender_count_alias">sender [n/m] via tag</option>
     <option value="sender_via_alias">sender via tag</option>
-    <option value="count_subject">[n/m] subject</option>
+    <option value="tag_number_sender">tag [n/m] sender</option>
     <option value="alias_only">tag only</option>
     <option value="noreply">noreply</option>
+  </select></div>
+  <div class="form-row"><label>Subject format</label><select id="set-subject-format" onchange="saveSettings()">
+    <option value="original">original</option>
+    <option value="count_prefix">[n/m] subject</option>
+    <option value="tag_count_prefix">tag [n/m] subject</option>
   </select></div>
   <div class="form-row"><label>Default limit</label><input id="set-limit" type="number" style="width:80px" onchange="saveSettings()"></div>
   <div class="form-row"><label>Bandwidth</label><span id="set-bandwidth" class="mono"></span></div>
@@ -350,26 +356,25 @@ const HTML = `<!DOCTYPE html>
   <div class="modal">
     <h3 id="rule-modal-title">New Rule</h3>
     <div id="rule-modal-user" class="form-row" style="display:none"><label style="color:var(--warn);min-width:auto">User:</label><span id="rule-modal-user-name" class="mono"></span></div>
-    <div class="form-row"><label>Name</label><input id="rule-name" style="flex:1"></div>
-    <div class="form-row"><label>Operator</label><select id="rule-op"><option value="and">AND</option><option value="or">OR</option></select></div>
-    <div class="form-row"><label>Action</label><select id="rule-action"><option value="block">Block</option><option value="reject">Reject</option><option value="forward">Forward</option></select></div>
-    <div class="form-row" id="rule-fwd-row"><label>Forward to</label><select id="rule-fwd" multiple style="flex:1;min-height:60px"></select></div>
+    <div class="form-row"><label>Name</label><input id="rule-name" style="flex:1" oninput="if(editingRuleId)markRuleDirty()"></div>
+    <div class="form-row"><label>Operator</label><select id="rule-op" onchange="if(editingRuleId)markRuleDirty()"><option value="and">AND</option><option value="or">OR</option></select></div>
+    <div class="form-row"><label>Action</label><select id="rule-action" onchange="if(editingRuleId)markRuleDirty()"><option value="block">Block</option><option value="reject">Reject</option><option value="forward">Forward</option></select></div>
+    <div class="form-row" id="rule-fwd-row"><label>Forward to</label><select id="rule-fwd" multiple style="flex:1;min-height:60px" onchange="if(editingRuleId)markRuleDirty()"></select></div>
     <h3 style="font-size:0.85rem;margin:0.5rem 0">Conditions</h3>
     <div id="rule-conditions"></div>
     <button class="btn-sm mt" onclick="addConditionRow()">+ Condition</button>
-    <div class="mt"><button class="btn-accent" onclick="saveRule()">Save</button></div>
+    <div class="mt"><button id="rule-save-btn" class="btn-accent" onclick="saveRule()">Save</button></div>
   </div>
 </div>
 
 <!-- ALIAS EDIT MODAL -->
 <div id="alias-modal" class="modal-overlay" onclick="if(event.target===this)closeAliasModal()">
   <div class="modal">
-    <h3>Edit Alias — <span id="alias-edit-tag"></span></h3>
-    <div class="form-row"><label>Limit</label><input id="alias-edit-limit" type="number" style="width:80px"></div>
-    <div class="form-row"><label>Description</label><input id="alias-edit-desc" style="flex:1"></div>
-    <div class="form-row"><label>Active</label><select id="alias-edit-active"><option value="1">Yes</option><option value="0">No</option></select></div>
-    <div class="form-row"><input type="checkbox" id="alias-edit-reset"><label for="alias-edit-reset" style="min-width:auto">Reset counter</label></div>
-    <button class="btn-accent" onclick="saveAlias()">Save</button>
+    <h3>Edit Alias — <span id="alias-edit-tag"></span> <button class="btn-sm" onclick="closeAliasModal()" style="float:right">Close</button></h3>
+    <div class="form-row"><label>Limit</label><input id="alias-edit-limit" type="number" style="width:80px" onblur="autoSaveAlias()"></div>
+    <div class="form-row"><label>Description</label><input id="alias-edit-desc" style="flex:1" onblur="autoSaveAlias()"></div>
+    <div class="form-row"><label>Active</label><select id="alias-edit-active" onchange="autoSaveAlias()"><option value="1">Yes</option><option value="0">No</option></select></div>
+    <div class="form-row"><input type="checkbox" id="alias-edit-reset" onchange="showResetConfirm(this.checked)"><label for="alias-edit-reset" style="min-width:auto">Reset counter</label><button id="alias-reset-confirm" class="btn-sm btn-danger" style="display:none;margin-left:0.5rem" onclick="doResetCounter()">Confirm</button></div>
   </div>
 </div>
 
@@ -394,11 +399,26 @@ const api = (path, opts) => fetch('/api' + path, {
 });
 
 // Tabs
+const tabLoaders = {
+  aliases: loadAliases,
+  rules: loadRules,
+  recipients: loadRecipients,
+  settings: loadSettings,
+  users: loadUsers,
+};
+const tabLastLoaded = {};
+const TAB_STALE_MS = 30_000;
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
   t.classList.add('active');
   document.getElementById(t.dataset.tab).classList.add('active');
+  const tab = t.dataset.tab;
+  const loader = tabLoaders[tab];
+  if (loader && Date.now() - (tabLastLoaded[tab] || 0) > TAB_STALE_MS) {
+    tabLastLoaded[tab] = Date.now();
+    loader();
+  }
 }));
 
 // Toast
@@ -548,21 +568,34 @@ function editAlias(tag, user) {
   document.getElementById('alias-edit-desc').value = editingAlias.description || '';
   document.getElementById('alias-edit-active').value = editingAlias.active;
   document.getElementById('alias-edit-reset').checked = false;
+  document.getElementById('alias-reset-confirm').style.display = 'none';
   document.getElementById('alias-modal').classList.add('active');
 }
 function closeAliasModal() { document.getElementById('alias-modal').classList.remove('active'); }
 
-async function saveAlias() {
+async function autoSaveAlias() {
   if (!editingAlias) return;
   const qp = isAdmin ? '?user=' + encodeURIComponent(editingAlias.user) : '';
   await api('/aliases/' + editingAlias.tag + qp, { method: 'PATCH', body: JSON.stringify({
     limit: +document.getElementById('alias-edit-limit').value,
     description: document.getElementById('alias-edit-desc').value || null,
     active: document.getElementById('alias-edit-active').value === '1',
-    reset_counter: document.getElementById('alias-edit-reset').checked,
   })});
-  closeAliasModal();
-  toast('Alias updated');
+  toast('Saved');
+  loadAliases();
+}
+
+function showResetConfirm(checked) {
+  document.getElementById('alias-reset-confirm').style.display = checked ? '' : 'none';
+}
+
+async function doResetCounter() {
+  if (!editingAlias) return;
+  const qp = isAdmin ? '?user=' + encodeURIComponent(editingAlias.user) : '';
+  await api('/aliases/' + editingAlias.tag + qp, { method: 'PATCH', body: JSON.stringify({ reset_counter: true }) });
+  document.getElementById('alias-edit-reset').checked = false;
+  document.getElementById('alias-reset-confirm').style.display = 'none';
+  toast('Counter reset');
   loadAliases();
 }
 
@@ -606,6 +639,7 @@ async function addWlEntry() {
   document.getElementById('wl-pattern').value = '';
   toast('Entry added');
   loadWl();
+  loadAliases();
 }
 
 async function delWl(id) {
@@ -613,6 +647,7 @@ async function delWl(id) {
   await api('/aliases/' + wlAliasTag + '/whitelist/' + id + qp, { method: 'DELETE' });
   toast('Entry removed');
   loadWl();
+  loadAliases();
 }
 
 // --- RULES ---
@@ -682,9 +717,11 @@ function showRuleModal(id) {
 
   if (!document.getElementById('rule-conditions').children.length) addConditionRow();
   document.getElementById('rule-modal').classList.add('active');
+  document.getElementById('rule-save-btn').disabled = !!id;
 }
 function editRule(id) { showRuleModal(id); }
 function closeRuleModal() { document.getElementById('rule-modal').classList.remove('active'); }
+function markRuleDirty() { document.getElementById('rule-save-btn').disabled = false; }
 
 function addConditionRow(field, match, value) {
   const div = document.createElement('div');
@@ -693,10 +730,14 @@ function addConditionRow(field, match, value) {
     <select class="rc-field"><option value="sender">sender</option><option value="sender_domain">domain</option><option value="subject">subject</option><option value="alias_tag">alias tag</option></select>
     <select class="rc-match"><option value="equals">equals</option><option value="contains">contains</option><option value="starts_with">starts with</option><option value="ends_with">ends with</option><option value="regex">regex</option></select>
     <input class="rc-value" placeholder="value" style="flex:1" value="\${esc(value || '')}">
-    <button class="btn-sm btn-danger" onclick="this.parentElement.remove()">X</button>
+    <button class="btn-sm btn-danger" onclick="this.parentElement.remove();if(editingRuleId)markRuleDirty()">X</button>
   \`;
   if (field) div.querySelector('.rc-field').value = field;
   if (match) div.querySelector('.rc-match').value = match;
+  div.querySelectorAll('select, input').forEach(el => {
+    el.addEventListener('change', () => { if (editingRuleId) markRuleDirty(); });
+    el.addEventListener('input', () => { if (editingRuleId) markRuleDirty(); });
+  });
   document.getElementById('rule-conditions').appendChild(div);
 }
 
@@ -888,6 +929,7 @@ async function loadSettings() {
   if (isAdmin && !adminTargetUser) {
     document.getElementById('set-catchall').value = '';
     document.getElementById('set-format').value = '';
+    document.getElementById('set-subject-format').value = '';
     document.getElementById('set-limit').value = '';
     document.getElementById('set-bandwidth').textContent = 'Select a user to view settings';
     return;
@@ -895,6 +937,7 @@ async function loadSettings() {
   const s = await api('/settings' + userParam());
   document.getElementById('set-catchall').value = s.catch_all;
   document.getElementById('set-format').value = s.from_name_format;
+  document.getElementById('set-subject-format').value = s.subject_format || 'original';
   document.getElementById('set-limit').value = s.default_limit;
   const mb = (s.bandwidth_used / 1048576).toFixed(1);
   const mbLimit = (s.bandwidth_limit / 1048576).toFixed(0);
@@ -905,6 +948,7 @@ async function saveSettings() {
   await api('/settings' + userParam(), { method: 'PATCH', body: JSON.stringify({
     catch_all: document.getElementById('set-catchall').value === '1',
     from_name_format: document.getElementById('set-format').value,
+    subject_format: document.getElementById('set-subject-format').value,
     default_limit: +document.getElementById('set-limit').value,
   })});
   toast('Settings saved');
@@ -978,6 +1022,8 @@ function esc(s) { const d = document.createElement('div'); d.textContent = s; re
 function fmtDate(s) { if (!s) return '—'; return new Date(s + 'Z').toLocaleString(); }
 
 function loadAll() {
+  const now = Date.now();
+  Object.keys(tabLoaders).forEach(tab => { tabLastLoaded[tab] = now; });
   loadAliases();
   loadRules();
   loadRecipients();

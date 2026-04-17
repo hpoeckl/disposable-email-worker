@@ -202,6 +202,7 @@ export async function handleEmail(
       forwarded: alias.forwarded + 1,
       limit: alias.limit,
       format: settings.from_name_format,
+      subjectFormat: settings.subject_format,
       noReplyAddress: `noreply@${env.BASE_DOMAIN}`,
       whitelisted: senderWhitelisted,
     },
