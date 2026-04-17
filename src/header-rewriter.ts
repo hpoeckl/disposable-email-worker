@@ -23,11 +23,32 @@ export function rewriteHeaders(
   const { sender, tag, forwarded, limit, format, subjectFormat, noReplyAddress, whitelisted } = input;
   const counter = `[${forwarded}/${limit}]`;
 
+  // Whitelisted senders bypass the forwarded counter, so counter-based formats
+  // must not show [n/m] — it would never change and mislead the user.
+  // Whitelisted senders bypass the forwarded counter, so counter-based formats
+  // must not show [n/m] — it would never change and mislead the user.
+  // [wl] replaces the counter slot where one exists, appends otherwise.
   if (whitelisted) {
-    return {
-      from: `"${esc(sender)} via ${esc(tag)} (whitelisted)" <${noReplyAddress}>`,
-      subject: null,
-    };
+    let from: string | null;
+    switch (format) {
+      case "sender_count_alias":
+        from = `"${esc(sender)} [wl] via ${esc(tag)}" <${noReplyAddress}>`;
+        break;
+      case "sender_via_alias":
+      case "count_subject":
+        from = `"${esc(sender)} via ${esc(tag)} [wl]" <${noReplyAddress}>`;
+        break;
+      case "tag_number_sender":
+        from = `"${esc(tag)} [wl] ${esc(sender)}" <${noReplyAddress}>`;
+        break;
+      case "alias_only":
+        from = `"${esc(tag)} [wl]" <${noReplyAddress}>`;
+        break;
+      case "noreply":
+        from = `"[wl]" <${noReplyAddress}>`;
+        break;
+    }
+    return { from, subject: null };
   }
 
   let from: string | null;

@@ -136,23 +136,63 @@ describe("rewriteHeaders", () => {
   });
 
   describe("whitelisted", () => {
-    it("overrides format to sender via tag (whitelisted)", () => {
+    it("sender_via_alias appends [wl] after tag", () => {
       const result = rewriteHeaders(
-        { ...base, whitelisted: true },
+        { ...base, format: "sender_via_alias", whitelisted: true },
         "Your order",
       );
       expect(result.from).toBe(
-        '"shop@amazon.com via amazon (whitelisted)" <noreply@drop.example.com>',
+        '"shop@amazon.com via amazon [wl]" <noreply@drop.example.com>',
       );
       expect(result.subject).toBeNull();
     });
 
-    it("ignores format setting when whitelisted", () => {
+    it("sender_count_alias places [wl] in counter slot", () => {
+      const result = rewriteHeaders(
+        { ...base, format: "sender_count_alias", whitelisted: true },
+        "Your order",
+      );
+      expect(result.from).toBe(
+        '"shop@amazon.com [wl] via amazon" <noreply@drop.example.com>',
+      );
+      expect(result.subject).toBeNull();
+    });
+
+    it("tag_number_sender places [wl] in counter slot", () => {
+      const result = rewriteHeaders(
+        { ...base, format: "tag_number_sender", whitelisted: true },
+        "Your order",
+      );
+      expect(result.from).toBe(
+        '"amazon [wl] shop@amazon.com" <noreply@drop.example.com>',
+      );
+      expect(result.subject).toBeNull();
+    });
+
+    it("alias_only appends [wl] after tag", () => {
+      const result = rewriteHeaders(
+        { ...base, format: "alias_only", whitelisted: true },
+        "Your order",
+      );
+      expect(result.from).toBe('"amazon [wl]" <noreply@drop.example.com>');
+      expect(result.subject).toBeNull();
+    });
+
+    it("noreply format shows [wl] as display name", () => {
       const result = rewriteHeaders(
         { ...base, format: "noreply", whitelisted: true },
         "Your order",
       );
-      expect(result.from).toContain("via amazon (whitelisted)");
+      expect(result.from).toBe('"[wl]" <noreply@drop.example.com>');
+      expect(result.subject).toBeNull();
+    });
+
+    it("suppresses subject format for whitelisted senders", () => {
+      const result = rewriteHeaders(
+        { ...base, format: "sender_via_alias", subjectFormat: "count_prefix", whitelisted: true },
+        "Your order",
+      );
+      expect(result.subject).toBeNull();
     });
   });
 });
