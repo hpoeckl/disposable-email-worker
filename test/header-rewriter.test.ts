@@ -104,6 +104,37 @@ describe("rewriteHeaders", () => {
     });
   });
 
+  describe("tag_number_sender", () => {
+    it("formats as tag counter sender", () => {
+      const result = rewriteHeaders(
+        { ...base, format: "tag_number_sender" },
+        "Your order",
+      );
+      expect(result.from).toBe(
+        '"amazon [3/24] shop@amazon.com" <noreply@drop.example.com>',
+      );
+      expect(result.subject).toBeNull();
+    });
+  });
+
+  describe("subject_format", () => {
+    it("count_prefix prepends counter to subject", () => {
+      const result = rewriteHeaders(
+        { ...base, format: "sender_via_alias", subjectFormat: "count_prefix" },
+        "Your order",
+      );
+      expect(result.subject).toBe("[3/24] Your order");
+    });
+
+    it("tag_count_prefix prepends tag and counter to subject", () => {
+      const result = rewriteHeaders(
+        { ...base, format: "sender_via_alias", subjectFormat: "tag_count_prefix" },
+        "Your order",
+      );
+      expect(result.subject).toBe("amazon [3/24] Your order");
+    });
+  });
+
   describe("whitelisted", () => {
     it("overrides format to sender via tag (whitelisted)", () => {
       const result = rewriteHeaders(
